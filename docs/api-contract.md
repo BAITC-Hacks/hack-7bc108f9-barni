@@ -75,8 +75,10 @@
 context 10, need 10, data 20, expected_result 15, success_criteria 15,
 constraints 10, users 10, contact 5, interaction_format 5 = 100. Сумма
 `breakdown[].earned` обязана равняться `score`. `breakdown` всегда содержит все
-9 полей в этом порядке. Баллы бинарные: поле заполнено (есть хотя бы одна буква
-или цифра) — полный вес, иначе 0; длина текста не влияет (tz.md §6.5).
+9 полей в этом порядке. Баллы бинарные: поле засчитано — полный вес, иначе 0;
+длина сверх минимума не влияет (tz.md §6.5). Поле засчитано, если после trim в
+нём минимум 3 слова (слово — последовательность букв или цифр); `contact` —
+минимум 5 символов, среди них есть буквы или цифры (`a@b.kz` засчитан).
 Уровень: `draft` 0–39, `working` 40–69, `ready` 70–89, `priority` 90–100.
 
 ### Task (полное представление, tz.md §11.1)
@@ -115,16 +117,20 @@ constraints 10, users 10, contact 5, interaction_format 5 = 100. Сумма
   "id": "uuid",
   "title": "string | null",
   "topic": "TopicSlug | null",
-  "context": "string | null",
-  "score": "integer",
-  "readiness_level": "ReadinessSlug",
-  "missing_fields": "ScoreResult.missing_fields",
-  "published_at": "ISO-8601"
+  "context_preview": "string | null",
+  "score": "integer | null",
+  "readiness_level": "ReadinessSlug | null",
+  "missing_fields": "ScoreResult.missing_fields | null",
+  "status": "draft | published",
+  "published_at": "ISO-8601 | null",
+  "proposals_count": 0
 }
 ```
 
-В каталог попадают только задачи с `status = published`, у них `score` и
-`readiness_level` не бывают `null` (публикация требует подтверждения — см. §5.3).
+`context_preview` — `card.context`, обрезанный до 200 символов (с `…` на конце,
+если обрезан). У опубликованных задач `score`, `readiness_level`,
+`missing_fields` и `published_at` не бывают `null`: публикация требует
+подтверждения (§5.4). `null` возможен только в `?status=draft`.
 
 ### Team (tz.md §11.2)
 
@@ -145,7 +151,9 @@ constraints 10, users 10, contact 5, interaction_format 5 = 100. Сумма
 {
   "id": "uuid",
   "task_id": "uuid",
+  "task_title": "string | null",
   "team_id": "uuid",
+  "team_name": "string",
   "idea": "string",
   "plan": "string",
   "estimated_duration": "string",
@@ -290,8 +298,10 @@ Query-параметры (все необязательны):
 - `sort` — на сегодня единственное значение `"score_desc"` (по умолчанию).
 
 Сортировка *(решение №11)*: `score` убыв., при равенстве — `published_at` убыв.
+Задачи с низким рейтингом (ниже 40) в каталоге всегда видны (FR-14). Лишние
+query-параметры игнорируются, недопустимые значения известных — 422.
 
-Ответ `200`: массив `TaskSummary`.
+Ответ `200`: массив `TaskSummary` (пустой массив, если ничего не найдено).
 
 Ошибки: `422 VALIDATION_ERROR` (неизвестное значение `topic`/`readiness`/`sort`).
 
@@ -333,8 +343,13 @@ Query-параметры (все необязательны):
   "prototype_url": "https://..."
 }
 ```
-`prototype_url` — необязательное поле (`string | null`), остальные обязательны
-и непустые.
+- `idea`, `plan` — непустые после trim, до 3000 символов;
+- `estimated_duration` — непустая, до 100 символов;
+- `prototype_url` — необязательна: `null`, пустая строка (→ `null`) или ссылка
+  `http://`/`https://` до 2000 символов.
+
+Число предложений не ограничено: одна команда может подать несколько на одну
+задачу. Статус сам по себе никогда не меняется — только через PATCH (§7.4).
 
 Ответ `201`: объект `Proposal` со `status = "pending"`.
 
@@ -348,35 +363,17 @@ Query-параметры (все необязательны):
 
 Список предложений по задаче — для бизнеса (tz.md §3 «Решение бизнеса», §13.3).
 
-Ответ `200`: массив `Proposal`.
+Ответ `200`: массив `Proposal`, по `created_at` (старые первыми).
 
 Ошибки: `404 TASK_NOT_FOUND`.
 
 ### 7.3 GET /api/proposals?team_id=... *(решение №6)*
 
 Команда видит статусы всех своих поданных предложений (обязательный
-`team_id` в query — без него список неоднозначен). Каждый элемент дополнен
-минимальным описанием задачи, иначе список статусов бесполезен без похода за
-каждой задачей по отдельности.
+`team_id` в query — без него список неоднозначен). Название задачи — в
+`task_title` каждого элемента.
 
-Ответ `200`:
-```json
-[
-  {
-    "id": "uuid",
-    "task_id": "uuid",
-    "team_id": "uuid",
-    "idea": "...",
-    "plan": "...",
-    "estimated_duration": "...",
-    "prototype_url": "...",
-    "status": "pending",
-    "created_at": "ISO-8601",
-    "updated_at": "ISO-8601",
-    "task": { "id": "uuid", "title": "string | null", "topic": "TopicSlug | null" }
-  }
-]
-```
+Ответ `200`: массив `Proposal` этой команды по всем задачам, по `created_at`.
 
 Ошибки:
 - `404 TEAM_NOT_FOUND`
