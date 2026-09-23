@@ -21,9 +21,15 @@ const steps = [
   { stage: 'published', label: 'Публикация' },
 ] as const;
 
-function ErrorNotice({ message, onDismiss }: { message: string; onDismiss: () => void }) {
+function ErrorNotice({ message, onDismiss, onRetry, disabled }: {
+  message: string;
+  onDismiss: () => void;
+  onRetry: () => void;
+  disabled: boolean;
+}) {
   if (!message) return null;
   return <div className="error-banner" role="alert"><span>{message}</span>
+    <button type="button" onClick={onRetry} disabled={disabled}>Повторить</button>
     <button type="button" onClick={onDismiss} aria-label="Закрыть сообщение">×</button>
   </div>;
 }
@@ -36,6 +42,8 @@ export default function CreatePage() {
   const [metaLoading, setMetaLoading] = useState(true);
   const [metaError, setMetaError] = useState('');
   const [metaReload, setMetaReload] = useState(0);
+  const [savedDraft, setSavedDraft] = useState<{ id: string; key: string } | null>(null);
+  const actionLock = useRef(false);
   const [analysis, setAnalysis] = useState<AnalyzeDraftResponse | null>(null);
   const [cardSource, setCardSource] = useState<AiSource | null>(null);
   const [answers, setAnswers] = useState<Record<string, string>>({});
@@ -54,11 +62,6 @@ export default function CreatePage() {
     setTopics([]);
     api.getMeta().then((result) => {
       if (!active) return;
-      if (!Array.isArray(result.topics) || result.topics.length === 0 ||
-          result.topics.some((item) => !item || typeof item.slug !== 'string' ||
-            !item.slug || typeof item.label !== 'string' || !item.label)) {
-        throw new Error('Сервер вернул некорректный список тем.');
-      }
       setTopics(result.topics);
       setTopic((current) => result.topics.some((item) => item.slug === current) ? current : '');
     }).catch((caught) => {
@@ -91,17 +94,17 @@ export default function CreatePage() {
     analysis!.questions.every((question) => Boolean(answers[question.id]?.trim()));
 
   async function analyze() {
-    if (!draft.trim() || !topics.some((item) => item.slug === topic)) return;
+    if (actionLock.current || !draft.trim() || !topics.some((item) => item.slug === topic)) return;
+    actionLock.current = true;
     setBusy('analyzing'); setError('');
     try {
-      const result = await api.analyzeDraft({ draft: draft.trim(), topic });
-      if (!Array.isArray(result.questions) || result.questions.length < 3 ||
-          result.questions.length > 5 || !Array.isArray(result.missing_fields) ||
-          (result.source !== 'model' && result.source !== 'fallback') ||
-          result.questions.some((question) => !question.id || !question.text?.trim() ||
-            !result.missing_fields.includes(question.target_field))) {
-        throw new Error('AI вернул неполные вопросы. Попробуйте ещё раз.');
+      const input = { draft: draft.trim(), topic };
+      const key = JSON.stringify(input);
+      if (savedDraft?.key !== key) {
+        const created = await api.createTask(input);
+        setSavedDraft({ id: created.id, key });
       }
+      const result = await api.analyzeDraft(input);
       setAnalysis(result);
       setAnswers({});
       setCard(null);
@@ -111,13 +114,14 @@ export default function CreatePage() {
     } catch (caught) {
       if (caught instanceof ApiError && caught.status === 409 &&
           caught.code === 'INSUFFICIENT_MISSING_FIELDS') {
-        setAnalysis(null);
-        setAnswers({});
         await requestCard([], []);
       } else {
         setError(errorMessage(caught));
       }
-    } finally { setBusy(null); }
+    } finally {
+      actionLock.current = false;
+      setBusy(null);
+    }
   }
 
   async function requestCard(questions: ClarifyingQuestion[], questionAnswers: QuestionAnswer[]) {
@@ -126,62 +130,51 @@ export default function CreatePage() {
       const result = await api.buildTaskCard({
         draft: draft.trim(), topic, questions, answers: questionAnswers,
       });
-      if (!result.card || typeof result.card !== 'object' ||
-          (result.source !== 'model' && result.source !== 'fallback')) {
-        throw new Error('Не удалось получить карточку.');
-      }
-      const fields: CardField[] = [
-        'title', 'topic', 'context', 'need', 'users', 'data', 'constraints',
-        'expected_result', 'success_criteria', 'contact', 'interaction_format',
-      ];
-      const safeCard = Object.fromEntries(fields.map((field) => {
-        const value = result.card[field];
-        return [field, typeof value === 'string' ? value : null];
-      })) as TaskCard;
-      safeCard.topic = topic;
-      setCard(safeCard);
+      setCard(result.card);
       setCardSource(result.source);
       setScore(null);
       setStage('card');
     } catch (caught) { setError(errorMessage(caught)); }
-    finally { setBusy(null); }
   }
 
   async function buildCard() {
-    if (!analysis || !allAnswered) return;
+    if (actionLock.current || !analysis || !allAnswered) return;
+    actionLock.current = true;
     const questionAnswers: QuestionAnswer[] = analysis.questions.map((question) => ({
       question_id: question.id,
       target_field: question.target_field,
       answer: (answers[question.id] ?? '').trim(),
     }));
-    await requestCard(analysis.questions, questionAnswers);
+    try {
+      await requestCard(analysis.questions, questionAnswers);
+    } finally {
+      actionLock.current = false;
+      setBusy(null);
+    }
   }
 
   function updateCard(field: CardField, value: string) {
     if (!card) return;
     if (field === 'topic' && value && !topics.some((item) => item.slug === value)) return;
     setCard({ ...card, [field]: value });
+    setScore(null);
   }
 
   async function confirm() {
-    if (!card) return;
+    if (actionLock.current || !card || !savedDraft) return;
     if (!card.title?.trim() || !card.topic ||
         !topics.some((item) => item.slug === card.topic)) {
       setError('Укажите название и выберите тему из списка.');
       return;
     }
+    actionLock.current = true;
     setBusy('confirming'); setError('');
     try {
-      const result = await api.confirmTaskCard({ card });
-      if (!Number.isFinite(result.score) || result.score < 0 || result.score > 100 ||
-          !Array.isArray(result.breakdown) || !Array.isArray(result.missing_fields) ||
-          result.breakdown.reduce((sum, item) => sum + item.earned, 0) !== result.score) {
-        throw new Error('Сервер вернул некорректный рейтинг. Попробуйте ещё раз.');
-      }
+      const result = await api.confirmTaskCard({ taskId: savedDraft.id, card });
       setScore(result);
       setStage('confirmed');
     } catch (caught) { setError(errorMessage(caught)); }
-    finally { setBusy(null); }
+    finally { actionLock.current = false; setBusy(null); }
   }
 
   function returnToEdit() {
@@ -191,17 +184,15 @@ export default function CreatePage() {
   }
 
   async function publish() {
-    if (!card || !score || stage !== 'confirmed') return;
+    if (actionLock.current || !savedDraft || !card || !score || stage !== 'confirmed') return;
+    actionLock.current = true;
     setBusy('publishing'); setError('');
     try {
-      const result = await api.publishTask({ card });
-      if (!result.task_id || result.status !== 'published') {
-        throw new Error('Сервер не подтвердил публикацию.');
-      }
+      const result = await api.publishTask({ taskId: savedDraft.id });
       setPublished(result);
       setStage('published');
     } catch (caught) { setError(errorMessage(caught)); }
-    finally { setBusy(null); }
+    finally { actionLock.current = false; setBusy(null); }
   }
 
   return <div className={'page-width create-page' + (stage === 'draft' ? ' create-page--intro' : '')}>
@@ -233,11 +224,11 @@ export default function CreatePage() {
           {metaError && <div className="error-banner" role="alert"><span>Не удалось загрузить темы: {metaError}</span>
             <button type="button" onClick={() => setMetaReload((value) => value + 1)}>Повторить</button>
           </div>}
-          <label className="field"><span>Какую задачу вы хотите решить?</span><textarea ref={draftInputRef} className="draft-input" rows={6} value={draft} onChange={(event) => setDraft(event.target.value)} placeholder="Например: новые сотрудники долго ищут учебные материалы. Хотим сделать обучение понятнее…" disabled={busy !== null} /></label>
+          <label className="field"><span>Какую задачу вы хотите решить?</span><textarea ref={draftInputRef} className="draft-input" rows={6} maxLength={20000} value={draft} onChange={(event) => setDraft(event.target.value)} placeholder="Например: новые сотрудники долго ищут учебные материалы. Хотим сделать обучение понятнее…" disabled={busy !== null} /></label>
           {!draft.trim() && <div className="draft-example"><span>Пока нет описания?</span><button type="button" onClick={fillExample} disabled={busy !== null || metaLoading || Boolean(metaError)}>Попробовать на примере <span aria-hidden="true">↗</span></button></div>}
           <div className="action-row"><button className="button button-primary" type="button" onClick={analyze} aria-busy={busy === 'analyzing' || busy === 'building'} disabled={busy !== null || metaLoading || Boolean(metaError) || !draft.trim() || !topic}>{busy === 'building' ? 'Собираем карточку…' : busy === 'analyzing' ? 'Анализируем…' : 'Уточнить задачу с AI'} <span aria-hidden="true">↗</span></button></div>
           <p className="action-note">Вы проверите и подтвердите карточку перед публикацией.</p>
-          <ErrorNotice message={error} onDismiss={() => setError('')} />
+          <ErrorNotice message={error} onDismiss={() => setError('')} disabled={busy !== null} onRetry={analyze} />
         </section>}
 
         {stage === 'questions' && analysis && <section className="surface-section">
@@ -249,7 +240,7 @@ export default function CreatePage() {
             <span className="question-number">0{index + 1}</span><span className="question-body"><strong>{question.text}</strong><textarea rows={3} required value={answers[question.id] ?? ''} onChange={(event) => setAnswers({ ...answers, [question.id]: event.target.value })} placeholder="Ваш ответ" disabled={busy !== null} /></span>
           </label>)}</div>
           <div className="action-row"><button className="button button-primary" type="button" onClick={buildCard} aria-busy={busy === 'building'} disabled={busy !== null || !allAnswered}>{busy === 'building' ? 'Собираем карточку…' : 'Сформировать карточку'} <span aria-hidden="true">↗</span></button><button className="button button-text" type="button" onClick={() => { setError(''); setStage('draft'); }} disabled={busy !== null}>Назад к описанию</button></div>
-          <ErrorNotice message={error} onDismiss={() => setError('')} />
+          <ErrorNotice message={error} onDismiss={() => setError('')} disabled={busy !== null} onRetry={buildCard} />
         </section>}
 
         {stage === 'card' && card && <section className="surface-section">
@@ -259,7 +250,7 @@ export default function CreatePage() {
             : 'Карточка сформирована AI. Проверьте каждое поле.'}</p>}
           <TaskCardEditor card={card} onChange={updateCard} topicOptions={topics} disabled={busy !== null} />
           <div className="action-row action-row--bordered"><button className="button button-primary" type="button" onClick={confirm} aria-busy={busy === 'confirming'} disabled={busy !== null}>{busy === 'confirming' ? 'Пересчитываем…' : 'Подтвердить и пересчитать'}</button></div>
-          <ErrorNotice message={error} onDismiss={() => setError('')} />
+          <ErrorNotice message={error} onDismiss={() => setError('')} disabled={busy !== null} onRetry={confirm} />
         </section>}
 
         {stage === 'confirmed' && score && <section className="surface-section confirmation-section">
@@ -267,7 +258,7 @@ export default function CreatePage() {
           <p className="confirmed-copy">Текущий рейтинг: <strong>{score.score} / 100</strong> · {score.readiness_label}</p>
           <div className="action-row"><button className="button button-primary" type="button" onClick={publish} aria-busy={busy === 'publishing'} disabled={busy !== null}>{busy === 'publishing' ? 'Публикуем…' : 'Опубликовать задачу'} <span aria-hidden="true">↗</span></button><button className="button button-secondary" type="button" onClick={returnToEdit} disabled={busy !== null}>Вернуться к редактированию</button></div>
           <p className="action-note">Минимального рейтинга для публикации нет.</p>
-          <ErrorNotice message={error} onDismiss={() => setError('')} />
+          <ErrorNotice message={error} onDismiss={() => setError('')} disabled={busy !== null} onRetry={publish} />
         </section>}
 
         {stage === 'published' && published && <section className="success-panel" role="status">

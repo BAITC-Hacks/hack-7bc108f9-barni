@@ -5,6 +5,8 @@
   CatalogParams,
   CatalogTask,
   CreateProposalInput,
+  CreateTaskResult,
+  DraftInput,
   MetaResponse,
   Proposal,
   ProposalStatus,
@@ -16,15 +18,15 @@
   TeamProposal,
 } from '../types';
 import { httpApi } from './httpApi';
-import { mockApi } from './mockApi';
 
 export interface TaskApi {
   getMeta(): Promise<MetaResponse>;
-  analyzeDraft(input: { draft: string; topic: string }): Promise<AnalyzeDraftResponse>;
+  createTask(input: DraftInput): Promise<CreateTaskResult>;
+  analyzeDraft(input: DraftInput): Promise<AnalyzeDraftResponse>;
   buildTaskCard(input: BuildTaskCardInput): Promise<BuildTaskCardResponse>;
   previewRating(input: { card: TaskCard }): Promise<ScoreResult>;
-  confirmTaskCard(input: { card: TaskCard }): Promise<ScoreResult>;
-  publishTask(input: { card: TaskCard }): Promise<PublishResult>;
+  confirmTaskCard(input: { taskId: string; card: TaskCard }): Promise<ScoreResult>;
+  publishTask(input: { taskId: string }): Promise<PublishResult>;
   getCatalog(params?: CatalogParams): Promise<CatalogTask[]>;
   getTask(taskId: string): Promise<PublishedTask | null>;
   getTeams(): Promise<Team[]>;
@@ -38,9 +40,7 @@ export interface TaskApi {
 }
 
 export { ApiError } from './httpApi';
-
-export const isMockMode = import.meta.env.VITE_USE_MOCK_API !== 'false';
-export const api: TaskApi = isMockMode ? mockApi : httpApi;
+export const api: TaskApi = httpApi;
 
 export function errorMessage(error: unknown): string {
   return error instanceof Error ? error.message : 'Что-то пошло не так. Попробуйте ещё раз.';

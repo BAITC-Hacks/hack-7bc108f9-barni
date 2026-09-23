@@ -1,0 +1,144 @@
+- generic [ref=e3]:
+  - banner [ref=e4]:
+    - generic [ref=e5]:
+      - link "ASAR — главная" [ref=e6] [cursor=pointer]:
+        - /url: /create
+        - generic [ref=e7]: ASAR
+      - navigation "Основная навигация" [ref=e8]:
+        - link "Создать задачу" [ref=e9] [cursor=pointer]:
+          - /url: /create
+        - link "Каталог" [ref=e10] [cursor=pointer]:
+          - /url: /catalog
+      - generic [ref=e11]:
+        - generic [ref=e12]: Роль
+        - combobox "Демонстрационная роль" [ref=e13]:
+          - option "Бизнес" [selected]
+          - option "Team Alpha"
+          - option "Team Beta"
+          - option "Team Gamma"
+  - main [ref=e14]:
+    - generic [ref=e16]:
+      - generic [ref=e113]:
+        - generic [ref=e114]: Рабочее пространство бизнеса
+        - generic [ref=e115]: От идеи до понятной задачи
+      - generic [ref=e116]:
+        - generic [ref=e117]:
+          - heading "Создать задачу" [level=1] [ref=e118]
+          - paragraph [ref=e119]: Уточните детали, проверьте карточку и опубликуйте задачу для студенческих команд.
+        - generic [aria-hidden]:
+          - generic: ✳
+      - generic [active] [ref=e33]:
+        - list "Этапы создания задачи" [ref=e120]:
+          - listitem [ref=e121]:
+            - generic [ref=e122]: ✓
+            - text: Описание
+          - listitem [ref=e123]:
+            - generic [ref=e124]: ✓
+            - text: Вопросы AI
+          - listitem [ref=e125]:
+            - generic [ref=e126]: ✓
+            - text: Карточка
+          - listitem [ref=e127]:
+            - generic [ref=e128]: "04"
+            - text: Рейтинг
+          - listitem [ref=e129]:
+            - generic [ref=e130]: "05"
+            - text: Публикация
+        - generic [ref=e34]:
+          - generic [ref=e222]:
+            - generic [ref=e223]:
+              - generic [ref=e224]: "04"
+              - generic [ref=e225]:
+                - heading "Карточка подтверждена" [level=2] [ref=e226]
+                - paragraph [ref=e227]: Рейтинг рассчитан. Можно вернуться к редактированию или опубликовать задачу.
+            - paragraph [ref=e228]:
+              - text: "Текущий рейтинг:"
+              - strong [ref=e229]: 80 / 100
+              - text: · Готовая
+            - generic [ref=e230]:
+              - button "Опубликовать задачу" [ref=e231] [cursor=pointer]
+              - button "Вернуться к редактированию" [ref=e232] [cursor=pointer]
+            - paragraph [ref=e233]: Минимального рейтинга для публикации нет.
+          - complementary [ref=e167]:
+            - region "Рейтинг задачи" [ref=e234]:
+              - generic [ref=e235]:
+                - generic [ref=e236]:
+                  - paragraph [ref=e237]: Готовность задачи
+                  - heading "Прозрачный рейтинг" [level=2] [ref=e238]
+                - generic [ref=e239]: Готовая
+              - generic [ref=e240]:
+                - generic [ref=e242]:
+                  - strong [ref=e243]: "80"
+                  - generic [ref=e244]: / 100
+                - generic [ref=e245]:
+                  - strong [ref=e246]: Задача хорошо подготовлена
+                  - paragraph [ref=e247]: Рейтинг отражает подтверждённые сведения. Пустые поля не мешают публикации.
+                  - text: "Потенциал роста: 20 баллов"
+              - progressbar "Рейтинг задачи" [ref=e248]
+              - generic [ref=e250]:
+                - heading "За что начислены баллы" [level=3] [ref=e251]
+                - generic [ref=e252]:
+                  - generic [ref=e253]:
+                    - generic [ref=e254]: Контекст
+                    - generic [ref=e255]: "Контекст: указано"
+                  - strong [ref=e256]: 10 / 10
+                - generic [ref=e257]:
+                  - generic [ref=e258]:
+                    - generic [ref=e259]: Потребность
+                    - generic [ref=e260]: "Потребность: указано"
+                  - strong [ref=e261]: 10 / 10
+                - generic [ref=e262]:
+                  - generic [ref=e263]:
+                    - generic [ref=e264]: Данные и материалы
+                    - generic [ref=e265]: "Данные и материалы: указано"
+                  - strong [ref=e266]: 20 / 20
+                - generic [ref=e267]:
+                  - generic [ref=e268]:
+                    - generic [ref=e269]: Ожидаемый результат
+                    - generic [ref=e270]: "Ожидаемый результат: указано"
+                  - strong [ref=e271]: 15 / 15
+                - generic [ref=e272]:
+                  - generic [ref=e273]:
+                    - generic [ref=e274]: Критерии успеха
+                    - generic [ref=e275]: "Критерии успеха: указано"
+                  - strong [ref=e276]: 15 / 15
+                - generic [ref=e277]:
+                  - generic [ref=e278]:
+                    - generic [ref=e279]: Ограничения
+                    - generic [ref=e280]: "Ограничения: не указано"
+                  - strong [ref=e281]: 0 / 10
+                - generic [ref=e282]:
+                  - generic [ref=e283]:
+                    - generic [ref=e284]: Пользователи
+                    - generic [ref=e285]: "Пользователи: указано"
+                  - strong [ref=e286]: 10 / 10
+                - generic [ref=e287]:
+                  - generic [ref=e288]:
+                    - generic [ref=e289]: Контакт
+                    - generic [ref=e290]: "Контакт: не указано"
+                  - strong [ref=e291]: 0 / 5
+                - generic [ref=e292]:
+                  - generic [ref=e293]:
+                    - generic [ref=e294]: Формат взаимодействия
+                    - generic [ref=e295]: "Формат взаимодействия: не указано"
+                  - strong [ref=e296]: 0 / 5
+              - generic [ref=e297]:
+                - heading "Что ещё можно добавить" [level=3] [ref=e298]
+                - generic [ref=e299]:
+                  - generic [ref=e300]: +
+                  - generic [ref=e301]:
+                    - strong [ref=e302]: Ограничения
+                    - paragraph [ref=e303]: Укажите сроки, технологии, доступы и другие ограничения
+                  - generic [ref=e304]: "+10"
+                - generic [ref=e305]:
+                  - generic [ref=e306]: +
+                  - generic [ref=e307]:
+                    - strong [ref=e308]: Контакт
+                    - paragraph [ref=e309]: Добавьте контакт представителя бизнеса
+                  - generic [ref=e310]: "+5"
+                - generic [ref=e311]:
+                  - generic [ref=e312]: +
+                  - generic [ref=e313]:
+                    - strong [ref=e314]: Формат взаимодействия
+                    - paragraph [ref=e315]: Опишите формат консультаций и обратной связи
+                  - generic [ref=e316]: "+5"

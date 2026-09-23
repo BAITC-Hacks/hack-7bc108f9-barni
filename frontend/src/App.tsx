@@ -1,6 +1,6 @@
 import { useEffect, useState } from 'react';
 import { Link, NavLink, Navigate, Route, Routes } from 'react-router-dom';
-import { api, isMockMode } from './api/client';
+import { api, errorMessage } from './api/client';
 import CreatePage from './pages/CreatePage';
 import CatalogPage from './pages/CatalogPage';
 import TaskPage from './pages/TaskPage';
@@ -17,8 +17,8 @@ function loadRole(): CurrentDemoRole {
     if (!parsed || typeof parsed !== 'object') return businessRole;
     const candidate = parsed as Partial<CurrentDemoRole>;
     if (candidate.type === 'business') return businessRole;
-    if (candidate.type === 'team' && typeof candidate.team_id === 'string' && typeof candidate.label === 'string') {
-      return { type: 'team', team_id: candidate.team_id, label: candidate.label };
+    if (candidate.type === 'team' && typeof candidate.team_id === 'string') {
+      return { type: 'team', team_id: candidate.team_id, label: '' };
     }
   } catch {
     // Повреждённое значение роли безопасно заменяется ролью бизнеса.
@@ -30,31 +30,37 @@ export default function App() {
   const [role, setRole] = useState<CurrentDemoRole>(loadRole);
   const [teams, setTeams] = useState<Team[]>([]);
   const [teamsReady, setTeamsReady] = useState(false);
+  const [teamsError, setTeamsError] = useState('');
+  const [teamsReload, setTeamsReload] = useState(0);
 
   useEffect(() => {
     let active = true;
+    setTeamsReady(false);
+    setTeamsError('');
     api.getTeams().then((result) => {
       if (!active) return;
       setTeams(result);
       setRole((current) => {
         if (current.type !== 'team') return current;
-        const team = result.find(({ id }) => id === current.team_id);
+        const team = result.find(({ id }) => id === current.team_id) ?? result[0];
         return team ? { type: 'team', team_id: team.id, label: team.name } : businessRole;
       });
       setTeamsReady(true);
-    }).catch(() => {
+    }).catch((caught) => {
       if (!active) return;
       setTeams([]);
-      setRole(businessRole);
-      setTeamsReady(true);
+      setTeamsError(errorMessage(caught));
     });
     return () => { active = false; };
-  }, []);
+  }, [teamsReload]);
 
   useEffect(() => {
     if (!teamsReady) return;
     try {
-      window.localStorage.setItem(ROLE_KEY, JSON.stringify(role));
+      const preference = role.type === 'team'
+        ? { type: role.type, team_id: role.team_id }
+        : { type: role.type };
+      window.localStorage.setItem(ROLE_KEY, JSON.stringify(preference));
     } catch {
       // Переключатель продолжает работать в текущей вкладке.
     }
@@ -88,6 +94,7 @@ export default function App() {
           <span>Роль</span>
           <select
             aria-label="Демонстрационная роль"
+            disabled={!teamsReady}
             value={!teamsReady || role.type === 'business' ? 'business' : role.team_id}
             onChange={(event) => changeRole(event.target.value)}
           >
@@ -95,10 +102,13 @@ export default function App() {
             {teams.map((team) => <option value={team.id} key={team.id}>{team.name}</option>)}
           </select>
         </label>
-        {isMockMode && <span className="demo-badge">Demo</span>}
       </div>
     </header>
     <main>
+      {teamsError && <div className="page-width error-banner" role="alert">
+        <span>Не удалось загрузить команды: {teamsError}</span>
+        <button type="button" onClick={() => setTeamsReload((value) => value + 1)}>Повторить</button>
+      </div>}
       <Routes>
         <Route path="/" element={<Navigate to="/create" replace />} />
         <Route path="/create" element={<CreatePage />} />
