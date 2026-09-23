@@ -1,3 +1,4 @@
 # hack-7bc108f9-barni
 Hackathon team repository for Barni
-HH
+
+AI-модуль: [запуск, тесты и API-контракты](backend/AI.md).
