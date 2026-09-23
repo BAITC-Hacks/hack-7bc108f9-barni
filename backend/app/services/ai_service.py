@@ -1,5 +1,6 @@
 import asyncio
 import json
+import logging
 import os
 from collections.abc import Callable
 from typing import TypeVar
@@ -24,6 +25,7 @@ from app.services.ai_prompts import (
 
 T = TypeVar("T", bound=BaseModel)
 TIMEOUT_SECONDS = 20
+logger = logging.getLogger(__name__)
 QUESTIONS = {
     "context": "Как сейчас устроен процесс, который вы хотите изменить?",
     "need": "Какую проблему нужно решить?",
@@ -135,7 +137,13 @@ class AIService:
                         "ai_invalid_output",
                         "Не удалось обработать ответ AI. Повторите запрос.",
                     ) from None
-            except (APIError, TimeoutError):
+            except (APIError, TimeoutError) as error:
+                # Never log provider bodies, credentials, drafts or answers.
+                logger.warning(
+                    "AI provider failure: %s status=%s",
+                    type(error).__name__,
+                    getattr(error, "status_code", None),
+                )
                 raise AIServiceError(
                     "ai_unavailable", "AI временно недоступен. Повторите запрос."
                 ) from None
