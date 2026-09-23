@@ -1,13 +1,21 @@
 import uuid
-from typing import Annotated
+from typing import Annotated, Literal
 
-from fastapi import APIRouter, Depends, HTTPException
+from fastapi import APIRouter, Depends, HTTPException, Query
 from sqlalchemy.orm import Session
 
 from app.db import get_db
 from app.models import Task
 from app.repositories import tasks
-from app.schemas.task import CardBody, TaskCreate, TaskDetail
+from app.schemas.ai import TopicSlug
+from app.schemas.task import (
+    CONTEXT_PREVIEW_LENGTH,
+    CardBody,
+    ReadinessSlug,
+    TaskCreate,
+    TaskDetail,
+    TaskSummary,
+)
 from app.services.rating_service import calculate_score
 
 router = APIRouter(prefix="/api/tasks", tags=["tasks"])
@@ -33,6 +41,37 @@ def to_detail(db: Session, task: Task) -> TaskDetail:
 @router.post("", response_model=TaskDetail, status_code=201)
 def create_task(body: TaskCreate, db: DB):
     return to_detail(db, tasks.create(db, body.draft_text, body.topic))
+
+
+def preview(text: str | None) -> str | None:
+    if text is None or len(text) <= CONTEXT_PREVIEW_LENGTH:
+        return text
+    return text[: CONTEXT_PREVIEW_LENGTH - 1].rstrip() + "…"
+
+
+@router.get("", response_model=list[TaskSummary])
+def list_tasks(
+    db: DB,
+    status: Annotated[Literal["draft", "published"], Query()] = "published",
+    topic: Annotated[TopicSlug | None, Query()] = None,
+    readiness: Annotated[ReadinessSlug | None, Query()] = None,
+    sort: Annotated[Literal["score_desc"], Query()] = "score_desc",
+):
+    return [
+        TaskSummary(
+            id=task.id,
+            title=task.title,
+            topic=task.topic,
+            context_preview=preview(task.card.get("context")),
+            score=task.score,
+            readiness_level=task.readiness_level,
+            missing_fields=task.missing_fields,
+            status=task.status,
+            published_at=task.published_at,
+            proposals_count=count,
+        )
+        for task, count in tasks.catalog(db, status, topic, readiness)
+    ]
 
 
 @router.get("/{task_id}", response_model=TaskDetail)

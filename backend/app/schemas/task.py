@@ -119,6 +119,22 @@ class ScoreResult(BaseModel):
     missing_fields: list[MissingField]
 
 
+CONTEXT_PREVIEW_LENGTH = 200
+
+
+class TaskSummary(BaseModel):
+    id: uuid.UUID
+    title: str | None
+    topic: TopicSlug | None
+    context_preview: str | None
+    score: int | None
+    readiness_level: ReadinessSlug | None
+    missing_fields: list[MissingField] | None
+    status: Literal["draft", "published"]
+    published_at: datetime | None
+    proposals_count: int
+
+
 class TaskDetail(BaseModel):
     model_config = ConfigDict(from_attributes=True)
 

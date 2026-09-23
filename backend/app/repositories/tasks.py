@@ -37,6 +37,31 @@ def confirm(db: Session, task: Task, card: TaskCard, result: ScoreResult) -> Tas
     return task
 
 
+def catalog(
+    db: Session, status: str, topic: str | None, readiness: str | None
+) -> list[tuple[Task, int]]:
+    counts = (
+        select(Proposal.task_id, func.count().label("n"))
+        .group_by(Proposal.task_id)
+        .subquery()
+    )
+    query = (
+        select(Task, func.coalesce(counts.c.n, 0))
+        .outerjoin(counts, counts.c.task_id == Task.id)
+        .where(Task.status == status)
+        .order_by(
+            Task.score.desc().nulls_last(),
+            Task.published_at.desc().nulls_last(),
+            Task.created_at.desc(),
+        )
+    )
+    if topic is not None:
+        query = query.where(Task.topic == topic)
+    if readiness is not None:
+        query = query.where(Task.readiness_level == readiness)
+    return [(task, count) for task, count in db.execute(query)]
+
+
 def publish(db: Session, task: Task) -> Task:
     if task.status != "published":
         task.status = "published"
