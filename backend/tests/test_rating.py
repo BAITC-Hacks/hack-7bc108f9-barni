@@ -4,11 +4,12 @@ from app.schemas.ai import TaskCard
 from app.services.rating_service import WEIGHTS, calculate_score, readiness_level
 
 SCORED = [field for field, *_ in WEIGHTS]
+FILLED = "Указано три слова"
 
 
 def card(*filled: str, **values: str | None) -> TaskCard:
     data = dict.fromkeys(TaskCard.model_fields)
-    data.update({field: "Указано" for field in filled})
+    data.update({field: FILLED for field in filled})
     data.update(values)
     return TaskCard.model_validate(data)
 
@@ -77,7 +78,7 @@ def test_missing_fields_list_what_is_left_with_potential_points():
 
 
 def test_long_text_earns_no_extra_points():
-    short = calculate_score(card(context="Да"))
+    short = calculate_score(card(context="Да, всё так"))
     long = calculate_score(card(context="очень подробно " * 500))
     assert short.score == long.score == 10
 
@@ -89,4 +90,24 @@ def test_punctuation_only_value_is_not_filled():
 
 
 def test_title_and_topic_are_not_scored():
-    assert calculate_score(card(title="Задача", topic="automation")).score == 0
+    assert calculate_score(card(title="Задача про заявки клиентов", topic="automation")).score == 0
+
+
+@pytest.mark.parametrize("value", ["Заявки", "Заявки вручную", "  Заявки   вручную  ", "а-б", "1 2"])
+def test_one_or_two_words_earn_nothing(value):
+    assert calculate_score(card(context=value)).score == 0
+
+
+@pytest.mark.parametrize("value", ["Заявки обрабатываются вручную", "CSV за 3", "WhatsApp, Excel, 1С"])
+def test_three_words_earn_full_weight(value):
+    assert calculate_score(card(context=value)).score == 10
+
+
+@pytest.mark.parametrize("value", ["a@b.kz", "@manager", "+7 701 000 00 00", "Ивана"])
+def test_contact_counts_from_five_chars_with_letters_or_digits(value):
+    assert calculate_score(card(contact=value)).score == 5
+
+
+@pytest.mark.parametrize("value", ["a@b", "@@@@@@", "Иван"])
+def test_short_or_symbol_only_contact_earns_nothing(value):
+    assert calculate_score(card(contact=value)).score == 0

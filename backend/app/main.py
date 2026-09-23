@@ -10,6 +10,7 @@ from starlette.exceptions import HTTPException as StarletteHTTPException
 
 from app.api.ai import router as ai_router
 from app.api.meta import router as meta_router
+from app.api.proposals import router as proposals_router
 from app.api.rating import router as rating_router
 from app.api.tasks import router as tasks_router
 
@@ -83,3 +84,4 @@ app.include_router(ai_router)
 app.include_router(meta_router)
 app.include_router(tasks_router)
 app.include_router(rating_router)
+app.include_router(proposals_router)

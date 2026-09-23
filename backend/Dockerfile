@@ -9,4 +9,5 @@ RUN pip install --no-cache-dir -r requirements-dev.txt
 COPY . .
 
 EXPOSE 8000
-ENTRYPOINT ["sh", "-c", "alembic upgrade head && uvicorn app.main:app --host 0.0.0.0 --port 8000"]
+# Retries while Postgres is still starting (e.g. after `docker compose restart`).
+ENTRYPOINT ["sh", "-c", "for i in $(seq 1 30); do alembic upgrade head && exec uvicorn app.main:app --host 0.0.0.0 --port 8000; echo \"Database not ready, retry $i/30\"; sleep 1; done; exit 1"]
