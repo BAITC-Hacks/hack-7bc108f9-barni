@@ -8,9 +8,10 @@ Frontend: React, TypeScript, Vite, React Router, fetch, Tailwind.
 Всё запускается через docker compose.
 
 ## Владельцы
-- №1 backend и интеграция: /backend (кроме файлов №3), docker-compose.yml, миграции, docs/api-contract.md.
+- №1 backend и интеграция: /backend (кроме файлов №3), docker-compose.yml, миграции, docs/api-contract.md, backend/app/services/rating_service.py и его тесты (до конца хакатона; №3 присылает правки через ревью).
 - №2 frontend: /frontend.
-- №3 AI и рейтинг: backend/app/services/ai_service.py, backend/app/services/rating_service.py, backend/app/schemas/ai.py, data/seed.json, backend/tests для рейтинга и AI, README.md.
+- №3 AI: backend/app/services/ai_service.py, backend/app/schemas/ai.py, data/seed.json, backend/tests для AI, README.md.
+  Исключение: в backend/app/schemas/ai.py №1 может добавить поле source и тип TopicSlug для topic; остальное в этом файле — зона №3.
 Чужие файлы не меняй — опиши нужное изменение в отчёте.
 
 ## Команды (завершаются сами)
