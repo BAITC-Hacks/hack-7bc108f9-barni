@@ -7,8 +7,8 @@ import type {
 } from '../types';
 import type { TaskApi } from './client';
 
-// The existing development default is documented in frontend/.env.example.
-const baseUrl = (import.meta.env.VITE_API_URL || 'http://localhost:8000').replace(/\/+$/, '');
+// Unset → local dev default; empty string → same origin (/api via the nginx proxy).
+const baseUrl = (import.meta.env.VITE_API_URL ?? 'http://localhost:8000').replace(/\/+$/, '');
 const timeoutMs = 10_000;
 type JsonRecord = Record<string, unknown>;
 type Method = 'GET' | 'POST' | 'PUT' | 'PATCH';
@@ -101,7 +101,7 @@ function errorFromResponse(payload: unknown, status: number, endpoint: string): 
 export async function requestJson<T>(path: string, { method = 'GET', body }: RequestOptions = {}): Promise<T> {
   let url: URL;
   try {
-    url = new URL(baseUrl + path);
+    url = new URL(baseUrl + path, window.location.origin);
     if (!['http:', 'https:'].includes(url.protocol) || url.username || url.password) throw new Error();
   } catch {
     throw new ApiError('Некорректный адрес API. Проверьте VITE_API_URL.', null, 'CONFIGURATION_ERROR', path);

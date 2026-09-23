@@ -5,10 +5,9 @@ COPY package.json package-lock.json ./
 RUN npm ci --no-audit --no-fund
 
 COPY . .
-# VITE_* values are baked into the bundle at build time, not read at runtime.
-ARG VITE_API_URL=http://localhost:8000
-ARG VITE_USE_MOCK_API=false
-ENV VITE_API_URL=$VITE_API_URL VITE_USE_MOCK_API=$VITE_USE_MOCK_API
+# Baked into the bundle at build time. Empty = same origin: nginx proxies /api to the backend.
+ARG VITE_API_URL=""
+ENV VITE_API_URL=$VITE_API_URL
 RUN npm run build
 
 FROM nginx:alpine

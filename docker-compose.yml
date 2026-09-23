@@ -36,11 +36,11 @@ services:
     build:
       context: ./frontend
       args:
-        VITE_API_URL: ${VITE_API_URL:-http://localhost:8000}
-        VITE_USE_MOCK_API: ${VITE_USE_MOCK_API:-false}
+        # Empty: the browser calls /api on the frontend host, nginx proxies it to backend.
+        VITE_API_URL: ""
     restart: unless-stopped
     ports:
-      - "5173:80"
+      - "${FRONTEND_PORT:-5173}:80"
     depends_on:
       - backend
 
