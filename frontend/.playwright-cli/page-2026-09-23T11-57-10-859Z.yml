@@ -1,0 +1,75 @@
+- generic [ref=e3]:
+  - banner [ref=e4]:
+    - generic [ref=e5]:
+      - link "ASAR — главная" [ref=e6] [cursor=pointer]:
+        - /url: /create
+        - generic [ref=e7]: ASAR
+      - navigation "Основная навигация" [ref=e8]:
+        - link "Создать задачу" [ref=e9] [cursor=pointer]:
+          - /url: /create
+        - link "Каталог" [ref=e10] [cursor=pointer]:
+          - /url: /catalog
+      - generic [ref=e11]:
+        - generic [ref=e12]: Роль
+        - combobox "Демонстрационная роль" [ref=e13]:
+          - option "Бизнес" [selected]
+          - option "Team Alpha"
+          - option "Team Beta"
+          - option "Team Gamma"
+  - main [ref=e14]:
+    - generic [ref=e494]:
+      - generic [ref=e495]:
+        - generic [ref=e496]: Каталог задач
+        - generic [ref=e497]: Открытые задачи бизнеса для студенческих команд
+      - generic [ref=e498]:
+        - generic [ref=e499]:
+          - paragraph [ref=e500]: Возможности для команд
+          - heading "Задачи, которым нужен результат." [level=1] [ref=e501]
+          - paragraph [ref=e502]: Сравните контекст, готовность и ожидаемый результат. Низкий рейтинг показывает, какие сведения ещё можно уточнить.
+        - 'generic "Найдено задач: 1" [ref=e503]':
+          - text: "1"
+          - generic [ref=e504]: задач найдено
+      - region "Фильтры каталога" [ref=e505]:
+        - generic [ref=e506]:
+          - generic [ref=e507]:
+            - text: Тема
+            - combobox "Тема" [ref=e508]:
+              - option "Все темы" [selected]
+              - option "Автоматизация"
+              - option "Аналитика"
+              - option "Маркетинг"
+              - option "Образование"
+              - option "Финансы"
+              - option "Другое"
+          - generic [ref=e509]:
+            - text: Готовность
+            - combobox "Готовность" [ref=e510]:
+              - option "Все уровни" [selected]
+              - option "Черновик"
+              - option "Рабочая"
+              - option "Готовая"
+              - option "Приоритетная"
+          - generic [ref=e511]:
+            - text: Сортировка
+            - combobox "Сортировка" [disabled] [ref=e512]:
+              - 'option "Рейтинг: выше сначала" [selected]'
+        - button "Сбросить фильтры" [active] [ref=e513] [cursor=pointer]
+      - article [ref=e536]:
+        - generic [ref=e537]: "01"
+        - generic [ref=e538]:
+          - generic [ref=e539]:
+            - generic [ref=e540]: Образование
+            - generic [ref=e541]: Черновик
+          - heading [level=2] [ref=e542]:
+            - link "Обработка заявок учебного центра" [ref=e543] [cursor=pointer]:
+              - /url: /tasks/af45ed39-bf13-400c-b12b-792926ae1e70
+          - paragraph [ref=e544]:
+            - strong [ref=e545]: "Контекст:"
+            - text: Сотрудники учебного центра вручную переносят заявки клиентов из почты в таблицу.
+          - generic [ref=e546]: "6 недостающих полей · Предложений: 0 · Опубликовано 23 сентября 2026 г."
+        - generic [ref=e547]:
+          - generic [ref=e548]:
+            - strong [ref=e549]: "30"
+            - generic [ref=e550]: /100
+          - link "Открыть задачу" [ref=e551] [cursor=pointer]:
+            - /url: /tasks/af45ed39-bf13-400c-b12b-792926ae1e70

@@ -1,4 +1,4 @@
-﻿import { type FormEvent, useEffect, useMemo, useState } from 'react';
+import { type FormEvent, useEffect, useMemo, useRef, useState } from 'react';
 import { Link, useParams } from 'react-router-dom';
 import { api, errorMessage } from '../api/client';
 import ScorePanel from '../components/ScorePanel';
@@ -57,16 +57,23 @@ export default function TaskPage({ role }: TaskPageProps) {
   const [loadError, setLoadError] = useState('');
   const [proposalsLoading, setProposalsLoading] = useState(true);
   const [proposalsError, setProposalsError] = useState('');
-  const [teamNames, setTeamNames] = useState<Record<string, string>>({});
   const [topicLabels, setTopicLabels] = useState<Record<string, string>>({});
   const [form, setForm] = useState<ProposalForm>(emptyProposal);
   const [formError, setFormError] = useState('');
   const [formSuccess, setFormSuccess] = useState('');
   const [submitting, setSubmitting] = useState(false);
+  const submittingRef = useRef(false);
+  const decisionRef = useRef(false);
   const [decisionError, setDecisionError] = useState('');
   const [updatingProposal, setUpdatingProposal] = useState<string | null>(null);
   const [reload, setReload] = useState(0);
   const [proposalsReload, setProposalsReload] = useState(0);
+
+  useEffect(() => {
+    setFormSuccess('');
+    setFormError('');
+    setDecisionError('');
+  }, [id, role.type, role.team_id]);
 
   useEffect(() => {
     let active = true;
@@ -91,7 +98,10 @@ export default function TaskPage({ role }: TaskPageProps) {
     setProposalsLoading(true);
     setProposalsError('');
     setProposals([]);
-    api.getProposals(id)
+    const request = role.type === 'team' && role.team_id
+      ? api.getTeamProposals(role.team_id).then((result) => result.filter((proposal) => proposal.task_id === id))
+      : api.getProposals(id);
+    request
       .then((nextProposals) => {
         if (active) setProposals(nextProposals);
       })
@@ -102,15 +112,10 @@ export default function TaskPage({ role }: TaskPageProps) {
         if (active) setProposalsLoading(false);
       });
     return () => { active = false; };
-  }, [id, proposalsReload]);
+  }, [id, proposalsReload, role.type, role.team_id]);
 
   useEffect(() => {
     let active = true;
-    api.getTeams().then((teams) => {
-      if (active) setTeamNames(Object.fromEntries(teams.map((team) => [team.id, team.name])));
-    }).catch(() => {
-      // Proposal cards still show the team identifier if names are unavailable.
-    });
     api.getMeta().then((meta) => {
       if (active) setTopicLabels(Object.fromEntries(meta.topics.map((topic) => [topic.slug, topic.label])));
     }).catch(() => {
@@ -136,6 +141,7 @@ export default function TaskPage({ role }: TaskPageProps) {
 
   async function submitProposal(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
+    if (submittingRef.current || proposalsLoading) return;
     const values = {
       idea: form.idea.trim(),
       plan: form.plan.trim(),
@@ -154,37 +160,38 @@ export default function TaskPage({ role }: TaskPageProps) {
       setFormError('Выберите роль команды.');
       return;
     }
+    submittingRef.current = true;
     setSubmitting(true);
     setFormError('');
     setFormSuccess('');
     try {
       const created = await api.createProposal(id, { team_id: role.team_id, ...values });
-      setProposals((current) => [created, ...current]);
+      setProposals((current) => [...current.filter((proposal) => proposal.id !== created.id), created]);
+      setProposalsReload((value) => value + 1);
       setForm(emptyProposal);
-      setFormSuccess('Предложение сохранено. Статус: «На рассмотрении».');
+      setFormSuccess('Предложение сохранено. Статус: «' + statusLabel(created.status) + '».');
     } catch (caught) {
       setFormError(errorMessage(caught));
     } finally {
+      submittingRef.current = false;
       setSubmitting(false);
     }
   }
 
   async function decide(proposalId: string, status: Exclude<ProposalStatus, 'pending'>) {
-    const previous = proposals;
+    if (decisionRef.current || role.type !== 'business') return;
+    decisionRef.current = true;
     setDecisionError('');
     setUpdatingProposal(proposalId);
-    setProposals((current) => current.map((proposal) =>
-      proposal.id === proposalId ? { ...proposal, status } : proposal
-    ));
     try {
       const updated = await api.updateProposalStatus(proposalId, status);
       setProposals((current) => current.map((proposal) =>
         proposal.id === proposalId ? updated : proposal
       ));
     } catch (caught) {
-      setProposals(previous);
       setDecisionError(errorMessage(caught));
     } finally {
+      decisionRef.current = false;
       setUpdatingProposal(null);
     }
   }
@@ -224,7 +231,7 @@ export default function TaskPage({ role }: TaskPageProps) {
           <span className={'readiness readiness--' + task.readiness_level}>{task.readiness_label}</span>
         </div>
         <h1>{task.title}</h1>
-        <p>Опубликовано {formatDate(task.published_at)} · {task.missing_fields.length} недостающих полей</p>
+        <p>{task.status === 'published' ? 'Опубликована' : task.status} · {formatDate(task.published_at)} · {task.missing_fields.length} недостающих полей</p>
       </div>
       <div className="detail-score">
         <span>Рейтинг готовности</span>
@@ -263,22 +270,22 @@ export default function TaskPage({ role }: TaskPageProps) {
           </div>
           <form className="proposal-form" onSubmit={submitProposal} noValidate>
             <label className="field"><span>Идея решения *</span>
-              <textarea value={form.idea} onChange={(event) => updateForm('idea', event.target.value)} rows={4} disabled={submitting} placeholder="Как команда решит задачу?" />
+              <textarea value={form.idea} onChange={(event) => updateForm('idea', event.target.value)} rows={4} maxLength={3000} disabled={submitting} placeholder="Как команда решит задачу?" />
             </label>
             <label className="field"><span>План реализации *</span>
-              <textarea value={form.plan} onChange={(event) => updateForm('plan', event.target.value)} rows={4} disabled={submitting} placeholder="Ключевые шаги и первый результат" />
+              <textarea value={form.plan} onChange={(event) => updateForm('plan', event.target.value)} rows={4} maxLength={3000} disabled={submitting} placeholder="Ключевые шаги и первый результат" />
             </label>
             <div className="form-two">
               <label className="field"><span>Предполагаемый срок *</span>
-                <input value={form.estimated_duration} onChange={(event) => updateForm('estimated_duration', event.target.value)} disabled={submitting} placeholder="Например, 3 недели" />
+                <input maxLength={100} value={form.estimated_duration} onChange={(event) => updateForm('estimated_duration', event.target.value)} disabled={submitting} placeholder="Например, 3 недели" />
               </label>
               <label className="field"><span>Ссылка на прототип (необязательно)</span>
-                <input type="url" value={form.prototype_url} onChange={(event) => updateForm('prototype_url', event.target.value)} disabled={submitting} placeholder="https://…" />
+                <input type="url" maxLength={2000} value={form.prototype_url} onChange={(event) => updateForm('prototype_url', event.target.value)} disabled={submitting} placeholder="https://…" />
               </label>
             </div>
             {formError && <div className="error-banner" role="alert">{formError}</div>}
             {formSuccess && <div className="notice-banner" role="status">{formSuccess}</div>}
-            <button className="button button-primary" type="submit" aria-busy={submitting} disabled={submitting}>
+            <button className="button button-primary" type="submit" aria-busy={submitting} disabled={submitting || proposalsLoading}>
               {submitting ? 'Сохраняем…' : 'Отправить предложение'} <span aria-hidden="true">↗</span>
             </button>
           </form>
@@ -318,7 +325,7 @@ export default function TaskPage({ role }: TaskPageProps) {
                 ? <div className="inline-empty">Команды ещё не отправили предложения по этой задаче.</div>
                 : <div className="proposal-list">{proposals.map((proposal) => <article className="proposal-item" key={proposal.id}>
                 <div className="proposal-item__head">
-                  <strong>{proposal.team_name || teamNames[proposal.team_id] || 'Команда ' + proposal.team_id.slice(0, 8)}</strong>
+                  <strong>{proposal.team_name}</strong>
                   <span className={'proposal-status proposal-status--' + proposal.status}>{statusLabel(proposal.status)}</span>
                 </div>
                 <p>{proposal.idea}</p>
@@ -331,10 +338,10 @@ export default function TaskPage({ role }: TaskPageProps) {
                   <div><dt>Отправлено</dt><dd>{formatDate(proposal.created_at)}</dd></div>
                 </dl>
                 {proposal.status === 'pending' && <div className="proposal-actions">
-                  <button className="button button-primary" type="button" aria-busy={updatingProposal === proposal.id} disabled={updatingProposal === proposal.id} onClick={() => decide(proposal.id, 'accepted')}>
+                  <button className="button button-primary" type="button" aria-busy={updatingProposal === proposal.id} disabled={updatingProposal !== null} onClick={() => decide(proposal.id, 'accepted')}>
                     {updatingProposal === proposal.id ? 'Сохраняем…' : 'Принять'}
                   </button>
-                  <button className="button button-secondary" type="button" disabled={updatingProposal === proposal.id} onClick={() => decide(proposal.id, 'rejected')}>Отклонить</button>
+                  <button className="button button-secondary" type="button" disabled={updatingProposal !== null} onClick={() => decide(proposal.id, 'rejected')}>Отклонить</button>
                 </div>}
               </article>)}</div>}
         </section>}

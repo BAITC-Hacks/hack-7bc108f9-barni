@@ -1,45 +1,49 @@
-# ASAR: frontend ↔ backend contract
+# ASAR frontend API integration
 
-Статический срез `origin/main` на коммите `138b54f` (пуш 1; backend tree совпадает с прежним `778d5eb`). Источники: `docs/api-contract.md`, `docs/api-examples.md` и зарегистрированные роутеры/схемы backend на этом коммите. `docs/api-contract.md` описывает также пуш 2; строка «ожидается» ниже означает, что маршрут прописан в контракте, но ещё не реализован в пуше 1. Работающий HTTP-сценарий этим документом не подтверждается.
+Source: docs/api-contract.md, docs/api-examples.md, and the implemented FastAPI routes/schemas in main at 8f93021.
 
-## Реальные и ожидаемые операции
+The frontend uses one public client (src/api/client.ts) and native fetch in src/api/httpApi.ts.
+VITE_API_URL defaults to http://localhost:8000. All task, catalog, team, rating and proposal data comes from FastAPI. The browser stores only the selected demo role as a UI preference.
 
-| Операция | Маршрут | Запрос | Ответ по коду или контракту | Состояние пуша 1 |
-|---|---|---|---|---|
-| Проверка сервера | `GET /health` | — | `{status:"ok"}` | Реализовано |
-| Справочники | `GET /api/meta` | — | `{topics:[{slug,label}],readiness_levels:[{slug,label,min,max}]}` | Реализовано |
-| Демо-команды | `GET /api/teams` | — | `TeamOut[]`, в том числе `points` | Реализовано |
-| Создать черновик | `POST /api/tasks` | `{draft_text,topic?:TopicSlug or null}` | `201 TaskDetail`, включая `id` и `proposals_count` | Реализовано |
-| Получить задачу | `GET /api/tasks/{id}` | UUID в пути | `TaskDetail`, включая nullable рейтинг и `proposals_count` | Реализовано |
-| Анализ черновика | `POST /api/ai/analyze-draft` | `{draft,topic?:TopicSlug or null}` | `{known_fields,missing_fields,questions,source}` | Реализовано |
-| Сборка карточки | `POST /api/ai/build-card` | `{draft,topic?:TopicSlug or null,questions,answers}` | `{card,source}` | Реализовано |
-| Предварительный рейтинг | `POST /api/rating/preview` | `{card:EditableCard}` | `ScoreResult`: `score,readiness_level,breakdown,missing_fields` | Реализовано |
-| Подтвердить карточку | `PUT /api/tasks/{id}/confirm` | `{card:EditableCard}` | Обновлённый **TaskDetail**, рейтинг в `score_breakdown` | Реализовано |
-| Опубликовать | `POST /api/tasks/{id}/publish` | Без тела | Полный **TaskDetail** со `status:"published"` | Ожидается в пуше 2 |
-| Каталог | `GET /api/tasks` | `status?`, `topic?`, `readiness?`, `sort?` | **TaskSummary[]**, только опубликованные по умолчанию | Ожидается в пуше 2 |
-| Отправить предложение | `POST /api/tasks/{id}/proposals` | `team_id,idea,plan,estimated_duration,prototype_url?` | `201 Proposal` | Ожидается в пуше 2 |
-| Предложения задачи | `GET /api/tasks/{id}/proposals` | UUID в пути | `Proposal[]` | Ожидается в пуше 2 |
-| Предложения команды | `GET /api/proposals?team_id={id}` | `team_id` обязателен | Предложения с кратким `task:{id,title,topic}` | Ожидается в пуше 2 |
-| Решение бизнеса | `PATCH /api/proposals/{id}` | `{status:"accepted" or "rejected"}` | Обновлённый `Proposal` | Ожидается в пуше 2 |
+## Operation mapping
 
-`TopicSlug`: `automation | analytics | marketing | education | finance | other`. Подписи берутся из `GET /api/meta`, а не из текста свободного ввода. `ReadinessSlug`: `draft | working | ready | priority`. Поля `TaskCard` — `title, topic, context, need, users, data, constraints, expected_result, success_criteria, contact, interaction_format`. В `EditableCard` каждое поле можно опустить; пустая строка превращается в `null`, лишнее поле даёт 422, `topic` принимает только slug или `null`.
+| Frontend operation | Endpoint | Request | Backend response |
+| --- | --- | --- | --- |
+| createTask | POST /api/tasks | draft_text, topic | TaskDetail; frontend retains id |
+| analyzeDraft | POST /api/ai/analyze-draft | draft, topic | known_fields, missing_fields, questions, source |
+| buildTaskCard | POST /api/ai/build-card | draft, topic, questions, answers | card, source |
+| confirmTaskCard | PUT /api/tasks/{id}/confirm | card | TaskDetail with score_breakdown |
+| publishTask | POST /api/tasks/{id}/publish | no body | TaskDetail with published status |
+| getCatalog | GET /api/tasks | status, topic, readiness, sort=score_desc | TaskSummary[] |
+| getTask | GET /api/tasks/{id} | id | TaskDetail |
+| getTeams | GET /api/teams | no body | Team[] |
+| getTaskProposals | GET /api/tasks/{id}/proposals | task id | Proposal[] |
+| createProposal | POST /api/tasks/{id}/proposals | team_id, idea, plan, estimated_duration, prototype_url | Proposal |
+| updateProposalStatus | PATCH /api/proposals/{id} | accepted or rejected | Proposal |
+| getTeamProposals | GET /api/proposals?team_id=... | team_id | Proposal[] |
+| getMeta | GET /api/meta | no body | topics, readiness_levels |
+| previewRating | POST /api/rating/preview | card | ScoreResult |
 
-`TaskDetail` содержит `id,status,draft_text,title,topic,card,score,readiness_level,score_breakdown,missing_fields,confirmed_at,published_at,created_at,updated_at,proposals_count`. До подтверждения рейтинг и время подтверждения равны `null`. `TaskSummary` содержит `id,title,topic,context,score,readiness_level,missing_fields,published_at` без полной `card` и `score_breakdown`. У `Proposal` по контракту нет `team_name`; `prototype_url` допускает `null`.
+## Mapping decisions
 
-## Сопоставление frontend
+- TaskSummary.context_preview maps to the existing catalog context field.
+- Team proposal responses are flat: task_title and task_id map to the existing UI task reference.
+- Proposal responses include team_name and updated_at.
+- Confirm returns TaskDetail; score_breakdown maps to the score panel breakdown field.
+- Score, readiness, breakdown and missing_fields are returned by the backend. The frontend only maps level labels.
+- Catalog sorting is delegated to the backend; only score_desc is supported.
+- An empty prototype URL is sent as null. A team may send multiple proposals on one task.
+- PATCH only permits pending -> accepted/rejected and does not modify other proposals.
 
-| Место | Текущий frontend | Проверка |
-|---|---|---|
-| Тема | `/create` и редактор карточки получают slug и русскую подпись из `/api/meta`; в API уходит slug | Типы и сборка; HTTP не запускался |
-| Подтверждение | `httpApi` преобразует `TaskDetail.score_breakdown` в `ScoreResult.breakdown` и добавляет подпись уровня | Типы и сборка; HTTP не запускался |
-| Публикация | `httpApi` преобразует `TaskDetail.id/status` в `PublishResult` | Маршрут ожидается в пуше 2 |
-| Каталог | `httpApi` читает `TaskSummary[]`, передаёт `readiness` и серверный `score_desc`; остальные два порядка сортирует клиент | Маршрут ожидается в пуше 2 |
-| Предложения | UI берёт имя команды из `/api/teams`, передаёт пустую ссылку на прототип как null и сверяет сохранённый team ID; ошибка списка не скрывает задачу | Маршруты ожидаются в пуше 2 |
-| Ответ AI | UI показывает `source`; `409 INSUFFICIENT_MISSING_FIELDS` ведёт к сборке без вопросов; таймаут AI 50 секунд | Типы и сборка; платный AI не вызывался |
-| Предварительный рейтинг | `POST /api/rating/preview` доступен, но текущий основной сценарий считает официальный рейтинг через confirm | Не подключён к UI |
-| Предложения команды | Статус своего предложения виден на странице задачи; глобальный `GET /api/proposals?team_id=` используется разделом «Мои предложения» в каталоге | Маршрут ожидается в пуше 2 |
-Для `analyze-draft` предусмотрен `409 INSUFFICIENT_MISSING_FIELDS`: если неизвестных полей меньше трёх, клиент сразу вызывает `build-card` с `questions:[]` и `answers:[]`. При отсутствии ключа или сбое провайдера `analyze-draft` отвечает `200`, `source:"fallback"`; `build-card` fallback не имеет и отвечает `503 AI_UNAVAILABLE`. Ошибки обёрнуты в `{error:{code,message}}` (для AI может быть `retryable`). CORS по умолчанию допускает `http://localhost:5173`, настраивается `CORS_ORIGINS`.
+## AI and errors
 
-## Путь интеграции
+The request timeout is 10 seconds, as requested for this integration.
+Backend AI may take up to 20 seconds per generation attempt; a slower call can therefore produce a frontend timeout. The user's input is retained and the failed action can be retried.
 
-`/meta` → создать черновик → анализ → сборка карточки → предварительный рейтинг при необходимости → подтвердить → опубликовать → каталог → подробная задача → предложение → ручное решение. Пуш 1 закрывает путь только до подтверждения. Публикация, каталог и предложения зависят от пуша 2; наличие описания в контракте не означает доступности этих маршрутов.
+Analyze can return source=fallback from the backend. Build-card has no fallback and returns 503 if OpenAI is unavailable.
+A 409 INSUFFICIENT_MISSING_FIELDS response skips questions and builds the card with empty question/answer arrays.
+
+ApiError keeps HTTP status, endpoint, server message/detail and validation errors when present.
+HTTP failures remain failures; no local success response is substituted.
+
+Runtime verification and the recorded end-to-end result are in PROGRESS.md.

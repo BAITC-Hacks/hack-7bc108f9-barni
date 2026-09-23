@@ -1,0 +1,128 @@
+- generic [ref=e3]:
+  - banner [ref=e4]:
+    - generic [ref=e5]:
+      - link "ASAR — главная" [ref=e6] [cursor=pointer]:
+        - /url: /create
+        - generic [ref=e7]: ASAR
+      - navigation "Основная навигация" [ref=e8]:
+        - link "Создать задачу" [ref=e9] [cursor=pointer]:
+          - /url: /create
+        - link "Каталог" [ref=e10] [cursor=pointer]:
+          - /url: /catalog
+      - generic [ref=e11]:
+        - generic [ref=e12]: Роль
+        - combobox "Демонстрационная роль" [ref=e13]:
+          - option "Бизнес" [selected]
+          - option "Team Alpha"
+          - option "Team Beta"
+          - option "Team Gamma"
+  - main [ref=e14]:
+    - generic [ref=e16]:
+      - generic [ref=e113]:
+        - generic [ref=e114]: Рабочее пространство бизнеса
+        - generic [ref=e115]: От идеи до понятной задачи
+      - generic [ref=e116]:
+        - generic [ref=e117]:
+          - heading "Создать задачу" [level=1] [ref=e118]
+          - paragraph [ref=e119]: Уточните детали, проверьте карточку и опубликуйте задачу для студенческих команд.
+        - generic [aria-hidden]:
+          - generic: ✳
+      - generic [active] [ref=e33]:
+        - list "Этапы создания задачи" [ref=e120]:
+          - listitem [ref=e121]:
+            - generic [ref=e122]: ✓
+            - text: Описание
+          - listitem [ref=e123]:
+            - generic [ref=e124]: ✓
+            - text: Вопросы AI
+          - listitem [ref=e125]:
+            - generic [ref=e126]: "03"
+            - text: Карточка
+          - listitem [ref=e127]:
+            - generic [ref=e128]: "04"
+            - text: Рейтинг
+          - listitem [ref=e129]:
+            - generic [ref=e130]: "05"
+            - text: Публикация
+        - generic [ref=e34]:
+          - generic [ref=e179]:
+            - generic [ref=e180]:
+              - generic [ref=e181]: "03"
+              - generic [ref=e182]:
+                - heading "Проверьте карточку" [level=2] [ref=e183]
+                - paragraph [ref=e184]: Каждое поле можно изменить. Пустые поля останутся видимыми.
+            - status [ref=e185]: Карточка сформирована AI. Проверьте каждое поле.
+            - generic [ref=e186]:
+              - generic [ref=e187]:
+                - generic [ref=e188]: Название задачи
+                - textbox "Название задачи" [ref=e189]:
+                  - /placeholder: Кратко и понятно
+              - generic [ref=e190]:
+                - generic [ref=e191]: Тема
+                - combobox "Тема" [ref=e192]:
+                  - option "Выберите тему"
+                  - option "Автоматизация"
+                  - option "Аналитика"
+                  - option "Маркетинг"
+                  - option "Образование" [selected]
+                  - option "Финансы"
+                  - option "Другое"
+              - generic [ref=e193]:
+                - generic [ref=e194]: Контекст и текущая ситуация
+                - textbox "Контекст и текущая ситуация" [ref=e195]:
+                  - /placeholder: Что происходит сейчас?
+                  - text: Сотрудники учебного центра вручную переносят заявки клиентов из почты в таблицу.
+              - generic [ref=e196]:
+                - generic [ref=e197]: Потребность
+                - textbox "Потребность" [ref=e198]:
+                  - /placeholder: Что требуется изменить?
+                  - text: Хотим улучшить обработку заявок клиентов
+              - generic [ref=e199]:
+                - generic [ref=e200]: Пользователи
+                - textbox "Пользователи" [ref=e201]:
+                  - /placeholder: Для кого создаётся решение?
+                  - text: Администраторы нашего учебного центра.
+              - generic [ref=e202]:
+                - generic [ref=e203]: Данные и материалы
+                - textbox "Данные и материалы" [ref=e204]:
+                  - /placeholder: Какие данные доступны?
+                  - text: Пока неизвестно, доступ к данным не согласован.
+              - generic [ref=e205]:
+                - generic [ref=e206]: Ограничения
+                - textbox "Ограничения" [ref=e207]:
+                  - /placeholder: Сроки, технологии и доступы
+              - generic [ref=e208]:
+                - generic [ref=e209]: Ожидаемый результат
+                - textbox "Ожидаемый результат" [ref=e210]:
+                  - /placeholder: Какой результат нужен бизнесу?
+                  - text: Пока неизвестно, формат результата ещё не определён.
+              - generic [ref=e211]:
+                - generic [ref=e212]: Критерии успеха
+                - textbox "Критерии успеха" [ref=e213]:
+                  - /placeholder: Как измерить результат?
+                  - text: Пока неизвестно, критерии успеха не согласованы.
+              - generic [ref=e214]:
+                - generic [ref=e215]: Контакт
+                - textbox "Контакт" [ref=e216]:
+                  - /placeholder: Как связаться с представителем?
+              - generic [ref=e217]:
+                - generic [ref=e218]: Формат взаимодействия
+                - textbox "Формат взаимодействия" [ref=e219]:
+                  - /placeholder: Как проходят консультации и обратная связь?
+            - button "Подтвердить и пересчитать" [ref=e221] [cursor=pointer]
+          - complementary [ref=e167]:
+            - generic [ref=e168]:
+              - text: ✳
+              - paragraph [ref=e169]: Как это работает
+              - heading "Чёткая задача получает больше внимания" [level=2] [ref=e170]
+              - paragraph [ref=e171]: AI поможет задать правильные вопросы. Вы проверите факты и сможете изменить любое поле.
+              - generic [ref=e172]:
+                - generic [ref=e173]:
+                  - generic [ref=e174]: "01"
+                  - text: Опишите запрос своими словами
+                - generic [ref=e175]:
+                  - generic [ref=e176]: "02"
+                  - text: Ответьте на вопросы AI
+                - generic [ref=e177]:
+                  - generic [ref=e178]: "03"
+                  - text: Подтвердите и опубликуйте

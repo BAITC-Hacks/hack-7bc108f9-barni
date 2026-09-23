@@ -1,4 +1,4 @@
-﻿export const fieldDefinitions = [
+export const fieldDefinitions = [
   { key: 'title', label: 'Название задачи', placeholder: 'Кратко и понятно' },
   { key: 'topic', label: 'Тема', placeholder: 'Например, автоматизация' },
   { key: 'context', label: 'Контекст и текущая ситуация', placeholder: 'Что происходит сейчас?' },
@@ -16,7 +16,7 @@ export type CardField = (typeof fieldDefinitions)[number]['key'];
 export type TaskCard = Record<CardField, string | null>;
 export type Readiness = 'draft' | 'working' | 'ready' | 'priority';
 export type ReadinessLevel = Readiness;
-export type CatalogSort = 'score_desc' | 'score_asc' | 'newest';
+export type CatalogSort = 'score_desc';
 export type AiSource = 'model' | 'fallback';
 
 export interface TopicOption {
@@ -53,9 +53,16 @@ export interface QuestionAnswer {
   answer: string;
 }
 
-export interface BuildTaskCardInput {
+export interface DraftInput {
   draft: string;
-  topic: string;
+  topic: string | null;
+}
+
+export interface CreateTaskResult {
+  id: string;
+}
+
+export interface BuildTaskCardInput extends DraftInput {
   questions: ClarifyingQuestion[];
   answers: QuestionAnswer[];
 }
@@ -106,7 +113,7 @@ export interface PublishedTask {
   missing_fields: MissingField[];
   status: 'published';
   published_at: string;
-  proposals_count?: number;
+  proposals_count: number;
 }
 
 export interface CatalogTask {
@@ -114,6 +121,8 @@ export interface CatalogTask {
   title: string | null;
   topic: string | null;
   context: string | null;
+  status: 'published';
+  proposals_count: number;
   score: number;
   readiness_level: ReadinessLevel;
   missing_fields: MissingField[];
@@ -126,6 +135,7 @@ export interface Team {
   interests: string[];
   skills: string[];
   technologies: string[];
+  points: number;
 }
 
 export type ProposalStatus = 'pending' | 'accepted' | 'rejected';
@@ -134,13 +144,15 @@ export interface Proposal {
   id: string;
   task_id: string;
   team_id: string;
-  team_name?: string;
+  task_title: string | null;
+  team_name: string;
   idea: string;
   plan: string;
   estimated_duration: string;
   prototype_url: string | null;
   status: ProposalStatus;
   created_at: string;
+  updated_at: string;
 }
 
 export interface TeamProposal extends Proposal {
