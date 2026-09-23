@@ -8,3 +8,8 @@ __pycache__/
 .env
 .env.*
 !.env.example
+
+# Tooling output
+.playwright-cli/
+*.log
+.DS_Store
