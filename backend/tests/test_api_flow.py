@@ -1,16 +1,11 @@
-"""API tests against a real PostgreSQL: a separate <db>_test database, migrated by Alembic."""
-
-import os
-import subprocess
-from pathlib import Path
+"""API tests against a real PostgreSQL (see the `engine` fixture in conftest.py)."""
 
 import pytest
 from fastapi.testclient import TestClient
-from sqlalchemy import create_engine, text
-from sqlalchemy.engine import make_url
+from sqlalchemy import text
 from sqlalchemy.orm import sessionmaker
 
-from app.db import DATABASE_URL, get_db
+from app.db import get_db
 from app.main import app
 
 ALPHA = "00000000-0000-4000-8000-000000000001"
@@ -22,32 +17,6 @@ FIELD_TEXT = "Заполнено тремя словами"
 WORKING = ("context", "need", "data")
 READY = (*WORKING, "expected_result", "success_criteria")
 FULL = (*READY, "constraints", "users", "contact", "interaction_format")
-
-
-@pytest.fixture(scope="module")
-def engine():
-    base = make_url(DATABASE_URL)
-    test_url = base.set(database=f"{base.database}_test")
-    admin = create_engine(base, isolation_level="AUTOCOMMIT")
-    try:
-        with admin.connect() as connection:
-            connection.execute(text(f'DROP DATABASE IF EXISTS "{test_url.database}" WITH (FORCE)'))
-            connection.execute(text(f'CREATE DATABASE "{test_url.database}"'))
-    except Exception as error:  # noqa: BLE001
-        pytest.skip(f"PostgreSQL is not reachable: {error}")
-    finally:
-        admin.dispose()
-    url = test_url.render_as_string(hide_password=False)
-    subprocess.run(
-        ["alembic", "upgrade", "head"],
-        cwd=Path(__file__).resolve().parents[1],
-        env={**os.environ, "DATABASE_URL": url},
-        check=True,
-        capture_output=True,
-    )
-    engine = create_engine(url)
-    yield engine
-    engine.dispose()
 
 
 @pytest.fixture
