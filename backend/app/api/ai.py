@@ -18,7 +18,7 @@ def http_error(error: AIServiceError) -> HTTPException:
     return HTTPException(
         status_code=error.status,
         detail={
-            "code": error.code,
+            "code": error.code.upper(),
             "message": error.message,
             "retryable": error.status == 503,
         },
