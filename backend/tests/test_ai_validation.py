@@ -318,3 +318,19 @@ def test_total_timeout_cancels_slow_provider(monkeypatch):
     )
     _, fallback = asyncio.run(ai.analyze(AnalyzeDraftRequest(draft=DRAFT)))
     assert fallback and parse.await_count == 1
+
+
+@pytest.mark.parametrize(
+    "model", ["gpt-5-mini", "gpt-5-mini-2025-08-07", "gpt-4.1-mini"]
+)
+def test_reasoning_settings_match_model(model):
+    from openai import NOT_GIVEN
+
+    ai, parse = service(analysis())
+    ai.model = model
+    asyncio.run(ai.analyze(AnalyzeDraftRequest(draft=DRAFT)))
+    actual = parse.call_args.kwargs["reasoning"]
+    if model.startswith("gpt-5-mini"):
+        assert actual == {"effort": "low"}
+    else:
+        assert actual is NOT_GIVEN
