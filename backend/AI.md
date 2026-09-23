@@ -1,5 +1,20 @@
 # AI-модуль MVP
 
+## Текущая модель на main
+
+`OPENAI_MODEL=gpt-5-mini`; значение по умолчанию в сервисе совпадает с
+`.env.example`. Для этой модели установлен `reasoning.effort=low`.
+После переноса на main проверки AI и рейтинга, включая реальные запросы,
+завершились: **81 passed, 1 warning**, 36.65 секунды (Python 3.12.14).
+Тесты PostgreSQL этим прогоном не запускались. Предупреждение относится
+к адаптеру httpx в Starlette TestClient.
+
+```powershell
+$env:RUN_LIVE_AI = '1'
+.\.venv312\Scripts\python -m pytest -c backend/pytest.ini backend/tests/test_ai_validation.py backend/tests/test_ai_live.py backend/tests/test_rating.py -q -p no:cacheprovider
+Remove-Item Env:RUN_LIVE_AI
+```
+
 ## Проверка готовности — 2026-09-23
 
 На Python 3.12.14 с моделью `gpt-4.1-mini` выполнен полный прогон:
@@ -43,14 +58,19 @@ Python 3.12, FastAPI, Pydantic v2, официальный OpenAI Python SDK.
 ```powershell
 py -3.12 -m venv .venv
 .\.venv\Scripts\python -m pip install -r backend/requirements-dev.txt
-Copy-Item backend/.env.example backend/.env
+Copy-Item .env.example backend/.env
 # В backend/.env укажите свой OPENAI_API_KEY; файл игнорируется git.
 .\.venv\Scripts\python -m uvicorn app.main:app --app-dir backend --env-file backend/.env
 ```
 
-`OPENAI_MODEL` по умолчанию `gpt-4.1-mini`; можно указать доступную вашему
+`OPENAI_MODEL` по умолчанию `gpt-5-mini`; можно указать доступную вашему
 проекту модель с поддержкой Structured Outputs. Без ключа сервер запускается.
 `.env` загружается командой uvicorn выше, а не при импорте модуля.
+Для GPT-5 mini используется `reasoning.effort=low`, чтобы снизить задержку.
+После изменения `.env` полностью перезапустите сервер: `--reload` не перечитывает
+окружение родительского процесса. Docker Compose читает корневой `.env`,
+локальная команда выше — `backend/.env`. Результаты проверки GPT-4.1 mini
+в начале документа относятся к предыдущей версии.
 
 Тесты без ключа, сети и платных вызовов:
 
