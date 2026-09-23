@@ -37,6 +37,15 @@ def confirm(db: Session, task: Task, card: TaskCard, result: ScoreResult) -> Tas
     return task
 
 
+def publish(db: Session, task: Task) -> Task:
+    if task.status != "published":
+        task.status = "published"
+        task.published_at = datetime.now(UTC)
+        db.commit()
+        db.refresh(task)
+    return task
+
+
 def proposals_count(db: Session, task_id: uuid.UUID) -> int:
     return db.scalar(
         select(func.count()).select_from(Proposal).where(Proposal.task_id == task_id)

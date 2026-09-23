@@ -48,3 +48,17 @@ def confirm_task(task_id: uuid.UUID, body: CardBody, db: DB):
     if sum(item.earned for item in result.breakdown) != result.score:
         raise RuntimeError("Rating breakdown does not add up to the score")
     return to_detail(db, tasks.confirm(db, task, card, result))
+
+
+@router.post("/{task_id}/publish", response_model=TaskDetail)
+def publish_task(task_id: uuid.UUID, db: DB):
+    task = get_or_404(db, task_id)
+    if task.confirmed_at is None:
+        raise HTTPException(
+            409,
+            {
+                "code": "TASK_NOT_CONFIRMED",
+                "message": "Сначала подтвердите карточку задачи",
+            },
+        )
+    return to_detail(db, tasks.publish(db, task))
