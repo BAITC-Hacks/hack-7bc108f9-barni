@@ -37,8 +37,8 @@ VITE_API_URL defaults to http://localhost:8000. All task, catalog, team, rating 
 
 ## AI and errors
 
-The request timeout is 10 seconds, as requested for this integration.
-Backend AI may take up to 20 seconds per generation attempt; a slower call can therefore produce a frontend timeout. The user's input is retained and the failed action can be retried.
+The default request timeout is 10 seconds. Analyze-draft and build-card use a 60-second timeout after the reported AI timeout was reproduced.
+Backend AI may take up to 20 seconds per generation attempt and retry validation once. The AI client deadline covers both attempts and transport overhead. User input is retained and the failed action can be retried.
 
 Analyze can return source=fallback from the backend. Build-card has no fallback and returns 503 if OpenAI is unavailable.
 A 409 INSUFFICIENT_MISSING_FIELDS response skips questions and builds the card with empty question/answer arrays.

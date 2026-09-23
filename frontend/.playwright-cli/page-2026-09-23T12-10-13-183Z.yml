@@ -1,0 +1,106 @@
+- generic [ref=f2e3]:
+  - banner [ref=f2e4]:
+    - generic [ref=f2e5]:
+      - link "ASAR — главная" [ref=f2e6] [cursor=pointer]:
+        - /url: /create
+        - generic [ref=f2e7]: ASAR
+      - navigation "Основная навигация" [ref=f2e8]:
+        - link "Создать задачу" [ref=f2e9] [cursor=pointer]:
+          - /url: /create
+        - link "Каталог" [ref=f2e10] [cursor=pointer]:
+          - /url: /catalog
+      - generic [ref=f2e11]:
+        - generic [ref=f2e12]: Роль
+        - combobox "Демонстрационная роль" [disabled] [ref=f2e13]:
+          - option "Бизнес" [selected]
+  - main [ref=f2e14]:
+    - generic [ref=f2e15]:
+      - generic [ref=f2e16]:
+        - region [ref=f2e17]:
+          - paragraph [ref=f2e18]: ASAR · Бизнес и студенческие команды
+          - heading "Опишите задачу бизнеса. Найдите студенческую команду." [level=1] [ref=f2e19]:
+            - text: Опишите задачу бизнеса.
+            - generic [ref=f2e20]: Найдите студенческую команду.
+          - paragraph [ref=f2e21]: AI поможет уточнить детали и собрать понятную карточку задачи. Опубликуйте её, получите предложения студенческих команд и выберите, с кем работать.
+          - generic [ref=f2e22]:
+            - link "Как это работает" [ref=f2e23] [cursor=pointer]:
+              - /url: "#how-it-works"
+            - link "Я из команды" [ref=f2e26] [cursor=pointer]:
+              - /url: /catalog
+          - generic "От запроса бизнеса через помощь AI к совместному проекту" [ref=f2e29]:
+            - generic [ref=f2e30]: Запрос бизнеса
+            - generic [aria-hidden] [ref=f2e31]: →
+            - generic [ref=f2e32]: Помощь AI
+            - generic [aria-hidden] [ref=f2e33]: →
+            - generic [ref=f2e34]: Совместный проект
+        - region [ref=f2e38]:
+          - paragraph [ref=f2e39]: Начните здесь · Шаг 1 из 5
+          - generic [ref=f2e41]:
+            - heading "С какой задачей вам помочь?" [level=2] [ref=f2e42]
+            - paragraph [ref=f2e43]: Начните с обычного описания. Детали уточним вместе с AI.
+          - generic [ref=f2e44]:
+            - generic [ref=f2e45]: Тема
+            - combobox "Тема" [disabled] [ref=f2e46]:
+              - option "Загружаем темы…" [selected]
+          - generic [ref=f2e47]:
+            - generic [ref=f2e48]: Какую задачу вы хотите решить?
+            - textbox "Какую задачу вы хотите решить?" [ref=f2e49]:
+              - /placeholder: "Например: новые сотрудники долго ищут учебные материалы. Хотим сделать обучение понятнее…"
+          - generic [ref=f2e50]:
+            - generic [ref=f2e51]: Пока нет описания?
+            - button "Попробовать на примере" [disabled] [ref=f2e52]:
+              - text: Попробовать на примере
+              - generic [aria-hidden] [ref=f2e53]: ↗
+          - button "Уточнить задачу с AI" [disabled] [ref=f2e55]
+          - paragraph [ref=f2e56]: Вы проверите и подтвердите карточку перед публикацией.
+      - generic [ref=f2e57]:
+        - region [ref=f2e58]:
+          - generic [ref=f2e59]:
+            - paragraph [ref=f2e60]: Как работает ASAR
+            - heading "От описания задачи до совместной работы" [level=2] [ref=f2e61]: От описания задачидо совместной работы
+            - paragraph [ref=f2e62]: Бизнес приносит реальный запрос. Студенты получают возможность применить знания на практике.
+          - list [ref=f2e63]:
+            - listitem [ref=f2e64]:
+              - generic [ref=f2e65]: "01"
+              - heading "Расскажите о задаче" [level=3] [ref=f2e69]
+              - paragraph [ref=f2e70]: Что происходит сейчас и что вы хотите изменить? Начните своими словами — AI задаст вопросы по недостающим деталям.
+            - listitem [ref=f2e71]:
+              - generic [ref=f2e72]: "02"
+              - heading "Проверьте и опубликуйте" [level=3] [ref=f2e76]
+              - paragraph [ref=f2e77]: AI соберёт карточку. Вы проверите факты, отредактируете поля и увидите, насколько задача готова к работе.
+            - listitem [ref=f2e78]:
+              - generic [ref=f2e79]: "03"
+              - heading "Выберите команду" [level=3] [ref=f2e83]
+              - paragraph [ref=f2e84]: Студенты предложат идею, план и сроки. Рассмотрите отклики и примите решение по каждому предложению.
+        - region [ref=f2e85]:
+          - generic [ref=f2e86]:
+            - paragraph [ref=f2e87]: Понятные условия с самого начала
+            - heading "Видно, чего не хватает задаче" [level=2] [ref=f2e88]: Видно, чегоне хватает задаче
+            - paragraph [ref=f2e89]: "Рейтинг от 0 до 100 показывает полноту подтверждённых сведений: контекст, данные, ожидаемый результат и условия работы. В карточке видно, за что начислены баллы и что ещё можно уточнить."
+            - generic [ref=f2e90]: С любым рейтингом можно публиковать задачу и получать отклики.
+          - generic "Пример заполнения карточки задачи" [ref=f2e91]:
+            - text: Пример карточки
+            - heading "Упростить обучение новых сотрудников" [level=3] [ref=f2e92]: Упростить обучениеновых сотрудников
+            - list [ref=f2e93]:
+              - listitem [ref=f2e94]:
+                - generic [ref=f2e95]: Контекст задачи
+                - generic [ref=f2e96]: Указан ✓
+              - listitem [ref=f2e97]:
+                - generic [ref=f2e98]: Ожидаемый результат
+                - generic [ref=f2e99]: Указан ✓
+              - listitem [ref=f2e100]:
+                - generic [ref=f2e101]: Данные и материалы
+                - generic [ref=f2e102]: Нужно уточнить +
+        - region [ref=f2e103]:
+          - generic [ref=f2e104]:
+            - paragraph [ref=f2e105]: Для студенческих команд
+            - heading "Знаниям нужна практика. Бизнесу — ваше решение." [level=2] [ref=f2e106]: Знаниям нужна практика.Бизнесу — ваше решение.
+            - paragraph [ref=f2e107]: Найдите задачу в каталоге, изучите условия и предложите свой подход.
+          - generic [ref=f2e108]:
+            - link "Смотреть задачи" [ref=f2e109] [cursor=pointer]:
+              - /url: /catalog
+            - button "У меня есть задача" [ref=f2e110] [cursor=pointer]
+        - generic [ref=f2e111]:
+          - strong [ref=f2e112]: ASAR
+          - generic [ref=f2e113]: Реальные задачи. Совместный опыт.
+          - button "К описанию задачи" [ref=f2e114] [cursor=pointer]: К описанию задачи ↑

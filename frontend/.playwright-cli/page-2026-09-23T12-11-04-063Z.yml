@@ -1,0 +1,80 @@
+- generic [ref=f3e3]:
+  - banner [ref=f3e4]:
+    - generic [ref=f3e5]:
+      - link "ASAR — главная" [ref=f3e6] [cursor=pointer]:
+        - /url: /create
+        - generic [ref=f3e7]: ASAR
+      - navigation "Основная навигация" [ref=f3e8]:
+        - link "Создать задачу" [ref=f3e9] [cursor=pointer]:
+          - /url: /create
+        - link "Каталог" [ref=f3e10] [cursor=pointer]:
+          - /url: /catalog
+      - generic [ref=f3e11]:
+        - generic [ref=f3e12]: Роль
+        - combobox "Демонстрационная роль" [ref=f3e13]:
+          - option "Бизнес"
+          - option "Team Alpha" [selected]
+          - option "Team Beta"
+          - option "Team Gamma"
+  - main [ref=f3e14]:
+    - generic [ref=f3e15]:
+      - generic [ref=f3e16]:
+        - generic [ref=f3e17]: Каталог задач
+        - generic [ref=f3e18]: Открытые задачи бизнеса для студенческих команд
+      - generic [ref=f3e19]:
+        - generic [ref=f3e20]:
+          - paragraph [ref=f3e21]: Возможности для команд
+          - heading "Задачи, которым нужен результат." [level=1] [ref=f3e22]
+          - paragraph [ref=f3e23]: Сравните контекст, готовность и ожидаемый результат. Низкий рейтинг показывает, какие сведения ещё можно уточнить.
+        - 'generic "Найдено задач: 1" [ref=f3e24]':
+          - text: "1"
+          - generic [ref=f3e25]: задач найдено
+      - region "Фильтры каталога" [ref=f3e26]:
+        - generic [ref=f3e27]:
+          - generic [ref=f3e28]:
+            - text: Тема
+            - combobox "Тема" [ref=f3e29]:
+              - option "Все темы" [selected]
+              - option "Автоматизация"
+              - option "Аналитика"
+              - option "Маркетинг"
+              - option "Образование"
+              - option "Финансы"
+              - option "Другое"
+          - generic [ref=f3e30]:
+            - text: Готовность
+            - combobox "Готовность" [ref=f3e31]:
+              - option "Все уровни" [selected]
+              - option "Черновик"
+              - option "Рабочая"
+              - option "Готовая"
+              - option "Приоритетная"
+          - generic [ref=f3e32]:
+            - text: Сортировка
+            - combobox "Сортировка" [disabled] [ref=f3e33]:
+              - 'option "Рейтинг: выше сначала" [selected]'
+        - button "Сбросить фильтры" [ref=f3e34] [cursor=pointer]
+      - region [ref=f3e35]:
+        - generic [ref=f3e41]:
+          - heading "Мои предложения" [level=2] [ref=f3e42]
+          - paragraph [ref=f3e43]: Предложения команды «Team Alpha» и решения по ним.
+        - generic [ref=f3e44]: Команда ещё не отправила предложения.
+      - article [ref=f3e46]:
+        - generic [ref=f3e47]: "01"
+        - generic [ref=f3e48]:
+          - generic [ref=f3e49]:
+            - generic [ref=f3e50]: Образование
+            - generic [ref=f3e51]: Черновик
+          - heading [level=2] [ref=f3e52]:
+            - link "Обработка заявок учебного центра" [ref=f3e53] [cursor=pointer]:
+              - /url: /tasks/af45ed39-bf13-400c-b12b-792926ae1e70
+          - paragraph [ref=f3e54]:
+            - strong [ref=f3e55]: "Контекст:"
+            - text: Сотрудники учебного центра вручную переносят заявки клиентов из почты в таблицу.
+          - generic [ref=f3e56]: "6 недостающих полей · Предложений: 1 · Опубликовано 23 сентября 2026 г."
+        - generic [ref=f3e57]:
+          - generic [ref=f3e58]:
+            - strong [ref=f3e59]: "30"
+            - generic [ref=f3e60]: /100
+          - link "Открыть задачу" [ref=f3e61] [cursor=pointer]:
+            - /url: /tasks/af45ed39-bf13-400c-b12b-792926ae1e70
