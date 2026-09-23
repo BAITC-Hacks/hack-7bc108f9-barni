@@ -19,6 +19,8 @@ ProposalStatus = Literal["pending", "accepted", "rejected"]
 def http_url(value: str | None) -> str | None:
     if value is None:
         return None
+    if len(value) > 2000:
+        raise ValueError("Ссылка длиннее 2000 символов")
     parsed = urlparse(value)
     if parsed.scheme not in ("http", "https") or not parsed.netloc or " " in value:
         raise ValueError("Ссылка должна начинаться с http:// или https://")
@@ -41,7 +43,6 @@ class ProposalCreate(BaseModel):
     prototype_url: Annotated[
         str | None,
         BeforeValidator(blank_to_none),
-        StringConstraints(max_length=2000),
         AfterValidator(http_url),
     ] = None
 
