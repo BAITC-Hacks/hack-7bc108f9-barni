@@ -1,0 +1,437 @@
+{
+  "tasks": [
+    {
+      "id": "11111111-1111-1111-1111-111111111111",
+      "draft_text": "Хотим сделать обучение новых сотрудников удобнее.",
+      "title": "Онбординг новых сотрудников",
+      "topic": "HR и образование",
+      "card": {
+        "title": "Онбординг новых сотрудников",
+        "topic": "HR и образование",
+        "context": "Новые сотрудники проходят вводное обучение.",
+        "need": "Сделать процесс обучения новых сотрудников удобнее.",
+        "users": null,
+        "data": null,
+        "constraints": null,
+        "expected_result": null,
+        "success_criteria": null,
+        "contact": "HR-отдел",
+        "interaction_format": null
+      },
+      "score": 25,
+      "readiness_level": "draft",
+      "score_breakdown": [
+        {
+          "field": "context",
+          "label": "Контекст",
+          "earned": 10,
+          "maximum": 10,
+          "reason": "Контекст указан"
+        },
+        {
+          "field": "need",
+          "label": "Потребность",
+          "earned": 10,
+          "maximum": 10,
+          "reason": "Потребность указана"
+        },
+        {
+          "field": "contact",
+          "label": "Контакт",
+          "earned": 5,
+          "maximum": 5,
+          "reason": "Контакт указан"
+        }
+      ],
+      "missing_fields": [
+        "users",
+        "data",
+        "constraints",
+        "expected_result",
+        "success_criteria",
+        "interaction_format"
+      ],
+      "status": "published"
+    },
+    {
+      "id": "22222222-2222-2222-2222-222222222222",
+      "draft_text": "Хотим автоматизировать ответы на типовые вопросы студентов.",
+      "title": "Помощник для ответов на вопросы студентов",
+      "topic": "Образование",
+      "card": {
+        "title": "Помощник для ответов на вопросы студентов",
+        "topic": "Образование",
+        "context": "Сотрудники учебного офиса вручную отвечают на повторяющиеся вопросы студентов.",
+        "need": "Сократить объём ручной обработки типовых вопросов.",
+        "users": "Студенты и сотрудники учебного офиса",
+        "data": null,
+        "constraints": null,
+        "expected_result": "Работающий прототип помощника для типовых вопросов.",
+        "success_criteria": null,
+        "contact": null,
+        "interaction_format": null
+      },
+      "score": 45,
+      "readiness_level": "working",
+      "score_breakdown": [
+        {
+          "field": "context",
+          "label": "Контекст",
+          "earned": 10,
+          "maximum": 10,
+          "reason": "Контекст указан"
+        },
+        {
+          "field": "need",
+          "label": "Потребность",
+          "earned": 10,
+          "maximum": 10,
+          "reason": "Потребность указана"
+        },
+        {
+          "field": "users",
+          "label": "Пользователи",
+          "earned": 10,
+          "maximum": 10,
+          "reason": "Пользователи указаны"
+        },
+        {
+          "field": "expected_result",
+          "label": "Ожидаемый результат",
+          "earned": 15,
+          "maximum": 15,
+          "reason": "Ожидаемый результат указан"
+        }
+      ],
+      "missing_fields": [
+        "data",
+        "constraints",
+        "success_criteria",
+        "contact",
+        "interaction_format"
+      ],
+      "status": "published"
+    },
+    {
+      "id": "33333333-3333-3333-3333-333333333333",
+      "draft_text": "Нужно помочь преподавателям быстрее проверять практические задания студентов.",
+      "title": "Помощник преподавателя для проверки заданий",
+      "topic": "Образование",
+      "card": {
+        "title": "Помощник преподавателя для проверки заданий",
+        "topic": "Образование",
+        "context": "Преподаватели вручную проверяют большое количество практических заданий.",
+        "need": "Сократить время первичной проверки практических заданий.",
+        "users": "Преподаватели",
+        "data": "Примеры заданий, критерии проверки и синтетические ответы студентов.",
+        "constraints": null,
+        "expected_result": "Веб-прототип, который анализирует ответ и показывает преподавателю результат проверки.",
+        "success_criteria": null,
+        "contact": null,
+        "interaction_format": null
+      },
+      "score": 65,
+      "readiness_level": "working",
+      "score_breakdown": [
+        {
+          "field": "context",
+          "label": "Контекст",
+          "earned": 10,
+          "maximum": 10,
+          "reason": "Контекст указан"
+        },
+        {
+          "field": "need",
+          "label": "Потребность",
+          "earned": 10,
+          "maximum": 10,
+          "reason": "Потребность указана"
+        },
+        {
+          "field": "users",
+          "label": "Пользователи",
+          "earned": 10,
+          "maximum": 10,
+          "reason": "Пользователи указаны"
+        },
+        {
+          "field": "data",
+          "label": "Данные и материалы",
+          "earned": 20,
+          "maximum": 20,
+          "reason": "Данные указаны"
+        },
+        {
+          "field": "expected_result",
+          "label": "Ожидаемый результат",
+          "earned": 15,
+          "maximum": 15,
+          "reason": "Ожидаемый результат указан"
+        }
+      ],
+      "missing_fields": [
+        "constraints",
+        "success_criteria",
+        "contact",
+        "interaction_format"
+      ],
+      "status": "published"
+    },
+    {
+      "id": "44444444-4444-4444-4444-444444444444",
+      "draft_text": "Нужен сервис подбора стажировок для студентов.",
+      "title": "Подбор стажировок для студентов",
+      "topic": "Карьера и образование",
+      "card": {
+        "title": "Подбор стажировок для студентов",
+        "topic": "Карьера и образование",
+        "context": "Студенты вручную ищут стажировки на разных сайтах и в Telegram-каналах.",
+        "need": "Упростить поиск подходящих стажировок.",
+        "users": "Студенты старших курсов",
+        "data": "CSV со списком компаний-партнёров и открытых стажировок.",
+        "constraints": "MVP должен работать как веб-приложение.",
+        "expected_result": "Прототип сервиса, показывающий студенту подходящие стажировки.",
+        "success_criteria": "Пользователь получает список подходящих стажировок по заданным параметрам.",
+        "contact": null,
+        "interaction_format": null
+      },
+      "score": 80,
+      "readiness_level": "ready",
+      "score_breakdown": [
+        {
+          "field": "context",
+          "label": "Контекст",
+          "earned": 10,
+          "maximum": 10,
+          "reason": "Контекст указан"
+        },
+        {
+          "field": "need",
+          "label": "Потребность",
+          "earned": 10,
+          "maximum": 10,
+          "reason": "Потребность указана"
+        },
+        {
+          "field": "users",
+          "label": "Пользователи",
+          "earned": 10,
+          "maximum": 10,
+          "reason": "Пользователи указаны"
+        },
+        {
+          "field": "data",
+          "label": "Данные и материалы",
+          "earned": 20,
+          "maximum": 20,
+          "reason": "Данные указаны"
+        },
+        {
+          "field": "constraints",
+          "label": "Ограничения",
+          "earned": 10,
+          "maximum": 10,
+          "reason": "Ограничения указаны"
+        },
+        {
+          "field": "expected_result",
+          "label": "Ожидаемый результат",
+          "earned": 15,
+          "maximum": 15,
+          "reason": "Ожидаемый результат указан"
+        },
+        {
+          "field": "success_criteria",
+          "label": "Критерии успеха",
+          "earned": 15,
+          "maximum": 15,
+          "reason": "Критерии успеха указаны"
+        }
+      ],
+      "missing_fields": [
+        "contact",
+        "interaction_format"
+      ],
+      "status": "published"
+    },
+    {
+      "id": "55555555-5555-5555-5555-555555555555",
+      "draft_text": "Хотим помочь студентам отслеживать прогресс по практическим заданиям.",
+      "title": "Трекер прогресса практических заданий",
+      "topic": "Образование",
+      "card": {
+        "title": "Трекер прогресса практических заданий",
+        "topic": "Образование",
+        "context": "Студентам и преподавателям сложно видеть общий прогресс выполнения практических заданий.",
+        "need": "Сделать прогресс выполнения заданий прозрачным.",
+        "users": "Студенты и преподаватели",
+        "data": "Список заданий, статусы выполнения и сроки.",
+        "constraints": "Веб-приложение; используются только синтетические данные.",
+        "expected_result": "Работающий прототип трекера прогресса.",
+        "success_criteria": "Студент видит текущий статус каждого задания, а преподаватель — общий прогресс группы.",
+        "contact": "Координатор образовательной программы",
+        "interaction_format": null
+      },
+      "score": 95,
+      "readiness_level": "priority",
+      "score_breakdown": [
+        {
+          "field": "context",
+          "label": "Контекст",
+          "earned": 10,
+          "maximum": 10,
+          "reason": "Контекст указан"
+        },
+        {
+          "field": "need",
+          "label": "Потребность",
+          "earned": 10,
+          "maximum": 10,
+          "reason": "Потребность указана"
+        },
+        {
+          "field": "users",
+          "label": "Пользователи",
+          "earned": 10,
+          "maximum": 10,
+          "reason": "Пользователи указаны"
+        },
+        {
+          "field": "data",
+          "label": "Данные и материалы",
+          "earned": 20,
+          "maximum": 20,
+          "reason": "Данные указаны"
+        },
+        {
+          "field": "constraints",
+          "label": "Ограничения",
+          "earned": 10,
+          "maximum": 10,
+          "reason": "Ограничения указаны"
+        },
+        {
+          "field": "expected_result",
+          "label": "Ожидаемый результат",
+          "earned": 15,
+          "maximum": 15,
+          "reason": "Ожидаемый результат указан"
+        },
+        {
+          "field": "success_criteria",
+          "label": "Критерии успеха",
+          "earned": 15,
+          "maximum": 15,
+          "reason": "Критерии успеха указаны"
+        },
+        {
+          "field": "contact",
+          "label": "Контакт",
+          "earned": 5,
+          "maximum": 5,
+          "reason": "Контакт указан"
+        }
+      ],
+      "missing_fields": [
+        "interaction_format"
+      ],
+      "status": "published"
+    }
+  ],
+
+  "teams": [
+    {
+      "id": "aaaaaaaa-aaaa-aaaa-aaaa-aaaaaaaaaaa1",
+      "name": "Team Alpha",
+      "interests": ["Образование", "AI"],
+      "skills": ["Python", "Machine Learning", "React"],
+      "technologies": ["FastAPI", "React", "OpenAI API"],
+      "points": 0
+    },
+    {
+      "id": "aaaaaaaa-aaaa-aaaa-aaaa-aaaaaaaaaaa2",
+      "name": "Data Nomads",
+      "interests": ["Data", "Аналитика", "Образование"],
+      "skills": ["Python", "SQL", "Data Analysis"],
+      "technologies": ["PostgreSQL", "Pandas", "FastAPI"],
+      "points": 0
+    },
+    {
+      "id": "aaaaaaaa-aaaa-aaaa-aaaa-aaaaaaaaaaa3",
+      "name": "Qazaq Coders",
+      "interests": ["Автоматизация", "Web"],
+      "skills": ["Backend", "Frontend", "DevOps"],
+      "technologies": ["Python", "React", "Docker"],
+      "points": 0
+    },
+    {
+      "id": "aaaaaaaa-aaaa-aaaa-aaaa-aaaaaaaaaaa4",
+      "name": "EduForge",
+      "interests": ["Образование", "EdTech"],
+      "skills": ["UX", "Frontend", "AI"],
+      "technologies": ["React", "TypeScript", "OpenAI API"],
+      "points": 0
+    },
+    {
+      "id": "aaaaaaaa-aaaa-aaaa-aaaa-aaaaaaaaaaa5",
+      "name": "Steppe AI",
+      "interests": ["AI", "Карьера", "HR"],
+      "skills": ["LLM", "Backend", "Product"],
+      "technologies": ["Python", "FastAPI", "PostgreSQL"],
+      "points": 0
+    }
+  ],
+
+  "proposals": [
+    {
+      "id": "bbbbbbbb-bbbb-bbbb-bbbb-bbbbbbbbbbb1",
+      "task_id": "55555555-5555-5555-5555-555555555555",
+      "team_id": "aaaaaaaa-aaaa-aaaa-aaaa-aaaaaaaaaaa1",
+      "idea": "Сделать веб-панель с прогрессом студентов и статусами практических заданий.",
+      "plan": "Спроектировать модель данных, реализовать API прогресса и собрать интерфейс для студента и преподавателя.",
+      "estimated_duration": "2 недели",
+      "prototype_url": "https://example.com/prototype-alpha",
+      "status": "pending"
+    },
+    {
+      "id": "bbbbbbbb-bbbb-bbbb-bbbb-bbbbbbbbbbb2",
+      "task_id": "44444444-4444-4444-4444-444444444444",
+      "team_id": "aaaaaaaa-aaaa-aaaa-aaaa-aaaaaaaaaaa5",
+      "idea": "Реализовать подбор стажировок на основе параметров профиля студента.",
+      "plan": "Подготовить фильтрацию данных, API подбора и интерфейс результатов.",
+      "estimated_duration": "3 недели",
+      "prototype_url": "https://example.com/prototype-steppe",
+      "status": "pending"
+    },
+    {
+      "id": "bbbbbbbb-bbbb-bbbb-bbbb-bbbbbbbbbbb3",
+      "task_id": "33333333-3333-3333-3333-333333333333",
+      "team_id": "aaaaaaaa-aaaa-aaaa-aaaa-aaaaaaaaaaa4",
+      "idea": "Создать помощника преподавателя для первичного анализа ответов студентов.",
+      "plan": "Подготовить критерии проверки, AI-анализ и интерфейс подтверждения результата преподавателем.",
+      "estimated_duration": "2 недели",
+      "prototype_url": "https://example.com/prototype-eduforge",
+      "status": "pending"
+    },
+    {
+      "id": "bbbbbbbb-bbbb-bbbb-bbbb-bbbbbbbbbbb4",
+      "task_id": "22222222-2222-2222-2222-222222222222",
+      "team_id": "aaaaaaaa-aaaa-aaaa-aaaa-aaaaaaaaaaa3",
+      "idea": "Создать базовый веб-помощник для обработки повторяющихся вопросов.",
+      "plan": "Собрать набор типовых сценариев, реализовать API и пользовательский интерфейс.",
+      "estimated_duration": "10 дней",
+      "prototype_url": "https://example.com/prototype-qazaq",
+      "status": "pending"
+    },
+    {
+      "id": "bbbbbbbb-bbbb-bbbb-bbbb-bbbbbbbbbbb5",
+      "task_id": "55555555-5555-5555-5555-555555555555",
+      "team_id": "aaaaaaaa-aaaa-aaaa-aaaa-aaaaaaaaaaa2",
+      "idea": "Добавить аналитический экран прогресса по практическим заданиям.",
+      "plan": "Собрать агрегаты по статусам заданий и показать преподавателю динамику группы.",
+      "estimated_duration": "2 недели",
+      "prototype_url": "https://example.com/prototype-nomads",
+      "status": "pending"
+    }
+  ]
+}
