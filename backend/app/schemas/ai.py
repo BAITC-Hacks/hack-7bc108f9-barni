@@ -16,6 +16,10 @@ CardField = Literal[
     "contact",
     "interaction_format",
 ]
+TopicSlug = Literal[
+    "automation", "analytics", "marketing", "education", "finance", "other"
+]
+Source = Literal["model", "fallback"]
 
 
 class StrictModel(BaseModel):
@@ -45,7 +49,7 @@ class Question(StrictModel):
 
 class AnalyzeDraftRequest(StrictModel):
     draft: Annotated[Text, Field(max_length=20000)]
-    topic: Annotated[Text, Field(max_length=500)] | None = None
+    topic: TopicSlug | None = None
 
 
 class AnalyzeDraftResponse(StrictModel):
@@ -93,6 +97,16 @@ class BuildCardRequest(AnalyzeDraftRequest):
 
 class BuildCardResponse(StrictModel):
     card: TaskCard
+
+
+# API-only shapes: the models above double as OpenAI output schemas, so `source`
+# must not leak into what the model is asked to produce.
+class AnalyzeDraftOut(AnalyzeDraftResponse):
+    source: Source
+
+
+class BuildCardOut(BuildCardResponse):
+    source: Source
 
 
 class ModelAnalysis(StrictModel):
