@@ -98,3 +98,19 @@ def test_live_build_grounding(client, draft, expected, unknown):
         assert value and fragment in value
     for field in unknown:
         assert getattr(card, field) is None
+
+
+def test_live_analysis_does_not_ask_for_supplied_facts(client):
+    response = client.post(
+        "/api/ai/analyze-draft",
+        json={
+            "draft": "Хотим ускорить обработку заявок. Сейчас операторы вручную переносят заявки из почты в таблицу. Данные для команды: CSV с заявками. Ожидаемый результат: прототип формы заявок.",
+            "topic": "Автоматизация",
+        },
+    )
+    assert response.status_code == 200
+    assert response.headers["X-AI-Fallback"] == "false"
+    result = AnalyzeDraftResponse.model_validate(response.json())
+    for field in ("context", "data", "expected_result", "need", "topic"):
+        assert field in result.known_fields
+        assert all(q.target_field != field for q in result.questions)
