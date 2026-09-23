@@ -3,8 +3,8 @@
 Источник: `tz.md` (обязательные разделы 5, 6, 7, 11, 12) + решения команды,
 закрывающие пробелы ТЗ (см. список ниже). AI-эндпоинты задокументированы по
 уже реализованному коду (`backend/app/api/ai.py`, `app/schemas/ai.py`,
-`app/services/ai_service.py`) как по источнику истины; расхождения между этим
-контрактом и текущим кодом AI-модуля отмечены пометкой **⚠ требует правки кода**.
+`app/services/ai_service.py`) как по источнику истины. Реальные ответы —
+в `docs/api-examples.md`.
 
 ## 0. Общие соглашения
 
@@ -57,7 +57,7 @@
       "label": "Контекст",
       "earned": 10,
       "maximum": 10,
-      "reason": "Контекст указан"
+      "reason": "Контекст: указано"
     }
   ],
   "missing_fields": [
@@ -74,7 +74,10 @@
 Рейтинг считается по 9 полям (title и topic не оцениваются, tz.md §6.2):
 context 10, need 10, data 20, expected_result 15, success_criteria 15,
 constraints 10, users 10, contact 5, interaction_format 5 = 100. Сумма
-`breakdown[].earned` обязана равняться `score`.
+`breakdown[].earned` обязана равняться `score`. `breakdown` всегда содержит все
+9 полей в этом порядке. Баллы бинарные: поле заполнено (есть хотя бы одна буква
+или цифра) — полный вес, иначе 0; длина текста не влияет (tz.md §6.5).
+Уровень: `draft` 0–39, `working` 40–69, `ready` 70–89, `priority` 90–100.
 
 ### Task (полное представление, tz.md §11.1)
 
@@ -93,10 +96,14 @@ constraints 10, users 10, contact 5, interaction_format 5 = 100. Сумма
   "confirmed_at": "ISO-8601 | null",
   "published_at": "ISO-8601 | null",
   "created_at": "ISO-8601",
-  "updated_at": "ISO-8601"
+  "updated_at": "ISO-8601",
+  "proposals_count": 0
 }
 ```
 
+Этот же объект (TaskDetail) возвращают `POST /api/tasks`, `GET /api/tasks/{id}`,
+`PUT /confirm` и `POST /publish`. `proposals_count` — число всех предложений по
+задаче (любого статуса).
 `score`/`readiness_level`/`score_breakdown`/`missing_fields` равны `null` до
 первого `confirm` — рассчитывает их только `rating_service.calculate_score`
 (tz.md §6.3), не AI.
@@ -242,8 +249,11 @@ constraints 10, users 10, contact 5, interaction_format 5 = 100. Сумма
 
 Запрос:
 ```json
-{ "card": { "...": "TaskCard, все 11 полей" } }
+{ "card": { "...": "EditableCard" } }
 ```
+`EditableCard` — те же 11 полей, что `TaskCard`, но мягче на входе: любое поле
+можно не передавать (= `null`), пустая строка или одни пробелы → `null`, строки
+обрезаются по краям. `topic` — только `TopicSlug`. Лишние поля → 422.
 
 Backend (tz.md §12): валидирует карточку → считает рейтинг →
 сохраняет `score_breakdown`/`missing_fields` → ставит/обновляет `confirmed_at`.
@@ -252,8 +262,9 @@ Backend (tz.md §12): валидирует карточку → считает �
 Ответ `200`: обновлённый объект `Task` (со свежими `score`, `readiness_level`,
 `score_breakdown`, `missing_fields`, `confirmed_at`).
 
-Ошибки: `404 TASK_NOT_FOUND`, `422 VALIDATION_ERROR` (нарушена схема `TaskCard`,
-например лишнее поле или пустая строка вместо `null`).
+`title` и `topic` задачи обновляются из карточки.
+
+Ошибки: `404 TASK_NOT_FOUND`, `422 VALIDATION_ERROR` (лишнее поле, `topic` не slug).
 
 ### 5.4 POST /api/tasks/{task_id}/publish *(решение №7)*
 
@@ -296,12 +307,12 @@ Query-параметры (все необязательны):
 
 Запрос:
 ```json
-{ "card": { "...": "TaskCard, все 11 полей" } }
+{ "card": { "...": "EditableCard, как в 5.3" } }
 ```
 
-Ответ `200`: `ScoreResult`.
+Ответ `200`: `ScoreResult` — тот же расчёт, что при confirm.
 
-Ошибки: `422 VALIDATION_ERROR` (нарушена схема `TaskCard`).
+Ошибки: `422 VALIDATION_ERROR` (лишнее поле, `topic` не slug).
 
 ---
 
@@ -393,9 +404,9 @@ Query-параметры (все необязательны):
 
 ## 8. AI
 
-Реализовано в `backend/app/api/ai.py` / `app/services/ai_service.py`. Контракт
-ниже соответствует уже написанному коду **по составу полей**, но требует
-правки формата ошибок и добавления поля `"source"` — см. пометки ⚠.
+Реализовано в `backend/app/api/ai.py` / `app/services/ai_service.py`.
+Заголовок `X-AI-Fallback: true|false` у analyze-draft сохранён для совместимости,
+источник истины — поле `source`.
 
 ### 8.1 POST /api/ai/analyze-draft
 
@@ -421,9 +432,9 @@ Query-параметры (все необязательны):
 ```
 `questions` — 3–5 элементов, каждый нацелен на поле из `missing_fields`, без
 дублей. `source` — `"model"` (успешный вызов OpenAI) или `"fallback"`
-(локальный шаблонный ответ) *(решение №12)*.
-⚠ Сейчас признак fallback передаётся только заголовком `X-AI-Fallback`
-(`true`/`false`), поля `source` в теле ответа нет — добавить в `AnalyzeDraftResponse`.
+(локальный шаблонный ответ) *(решение №12)*. `known_fields.topic`, если
+есть, всегда slug: если `topic` не передан и модель вернула не slug, поле
+переносится в `missing_fields`.
 
 Ошибки:
 - `422 VALIDATION_ERROR` — пустой/слишком длинный `draft`, неизвестный `topic`.
@@ -432,15 +443,9 @@ Query-параметры (все необязательны):
   выполнить «минимум 3 вопроса» и «вопросы только по недостающим полям»
   (см. противоречие тз.md ниже). Клиент должен сразу вызвать `build-card` с
   пустыми `questions`/`answers`.
-- `503 AI_UNAVAILABLE` — нет ключа, таймаут или ошибка провайдера после
-  одного повтора; `retryable: true`. В текущей реализации analyze-draft на
-  этот случай сам переключается на локальный fallback и отвечает `200`, а не
-  ошибкой — код оставлен в контракте для build-card и на случай, если fallback
-  тоже не сможет отдать ≥ 3 полей.
-
-⚠ Сейчас код ошибки — `"ai_unavailable"` (нижний регистр) в обёртке `"detail"`
-(`{"detail": {"code": "ai_unavailable", "message": "...", "retryable": true}}`).
-Нужно перейти на `{"error": {"code": "AI_UNAVAILABLE", "message": "..."}}`.
+- Нет ключа, таймаут, ошибка провайдера или невалидный ответ модели после
+  повтора — не ошибка: analyze-draft отвечает `200` с `"source": "fallback"`
+  (шаблонные вопросы по пустым полям, tz.md §7.4).
 
 ### 8.2 POST /api/ai/build-card
 
@@ -453,8 +458,10 @@ Query-параметры (все необязательны):
   "answers": [{ "question_id": "q1", "answer": "Заявки приходят в WhatsApp и обрабатываются вручную" }]
 }
 ```
-`questions`/`answers` — до 11 элементов, id уникальны, каждый `answer.question_id`
-ссылается на переданный `questions[].id`.
+`questions` — те же вопросы, что вернул analyze-draft, передаются обратно как
+есть. `questions`/`answers` — до 11 элементов, id уникальны, каждый
+`answer.question_id` ссылается на переданный `questions[].id`; на неотвеченные
+вопросы запись в `answers` не нужна. `topic` — `TopicSlug | null`.
 
 Ответ `200`:
 ```json
@@ -475,9 +482,8 @@ Query-параметры (все необязательны):
   "source": "model"
 }
 ```
-⚠ Поля `source` в текущей реализации нет (fallback для build-card не
-реализован вовсе — при ошибке провайдера всегда `503`, значит `source` для
-build-card фактически всегда будет `"model"` при `200`).
+Fallback для build-card нет: при `200` всегда `"source": "model"`, при сбое
+модели — `503`. `card.topic` — slug или `null`.
 
 Ошибки:
 - `422 VALIDATION_ERROR` — нарушена схема запроса (пустые строки, дубли id,
@@ -487,8 +493,7 @@ build-card фактически всегда будет `"model"` при `200`).
 - `503 AI_INVALID_OUTPUT` — ответ модели не прошёл валидацию Pydantic/grounding
   после одного повторного запроса.
 
-⚠ Те же исправления обёртки/регистра, что и в 8.1 (`"detail"` → `"error"`,
-`"ai_invalid_output"` → `"AI_INVALID_OUTPUT"`).
+У обоих 503 внутри `error` есть `"retryable": true` — показать кнопку «Повторить».
 
 ---
 
@@ -504,7 +509,8 @@ build-card фактически всегда будет `"model"` при `200`).
 | `TASK_NOT_PUBLISHED` | 409 | 7.1 (решение №9) |
 | `PROPOSAL_ALREADY_DECIDED` | 409 | 7.4 (решение №10) |
 | `INSUFFICIENT_MISSING_FIELDS` | 409 | 8.1 (уже в коде как `insufficient_missing_fields`) |
-| `AI_UNAVAILABLE` | 503, `retryable: true` | 8.1, 8.2 |
+| `AI_UNAVAILABLE` | 503, `retryable: true` | 8.2 (8.1 в этом случае отвечает fallback) |
+| `INTERNAL_ERROR` | 500 | любая непредвиденная ошибка сервера, без деталей |
 | `AI_INVALID_OUTPUT` | 503, `retryable: true` | 8.2 |
 
 `retryable` — необязательное дополнительное поле внутри `error` только для AI-таймаутов/недоступности; остальные ошибки не ретраятся автоматически.
