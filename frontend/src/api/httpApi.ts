@@ -1,4 +1,4 @@
-﻿import { fieldDefinitions } from '../types';
+import { fieldDefinitions } from '../types';
 import type {
   AnalyzeDraftResponse, BuildTaskCardResponse, CardField, CatalogParams, CatalogTask,
   ClarifyingQuestion, CreateTaskResult, MetaResponse, MissingField, Proposal,
@@ -9,10 +9,12 @@ import type { TaskApi } from './client';
 
 // Unset → local dev default; empty string → same origin (/api via the nginx proxy).
 const baseUrl = (import.meta.env.VITE_API_URL ?? 'http://localhost:8000').replace(/\/+$/, '');
-const timeoutMs = 10_000;
+const defaultTimeoutMs = 10_000;
+// Backend AI can make two validated attempts of up to 20 seconds each.
+const aiTimeoutMs = 60_000;
 type JsonRecord = Record<string, unknown>;
 type Method = 'GET' | 'POST' | 'PUT' | 'PATCH';
-interface RequestOptions { method?: Method; body?: unknown }
+interface RequestOptions { method?: Method; body?: unknown; timeoutMs?: number }
 
 interface BackendTask {
   id: string;
@@ -98,7 +100,7 @@ function errorFromResponse(payload: unknown, status: number, endpoint: string): 
   return new ApiError(message, status, isText(info.code) ? info.code : null, endpoint, detail, serverMessage, validationErrors);
 }
 
-export async function requestJson<T>(path: string, { method = 'GET', body }: RequestOptions = {}): Promise<T> {
+export async function requestJson<T>(path: string, { method = 'GET', body, timeoutMs = defaultTimeoutMs }: RequestOptions = {}): Promise<T> {
   let url: URL;
   try {
     url = new URL(baseUrl + path, window.location.origin);
@@ -132,7 +134,7 @@ export async function requestJson<T>(path: string, { method = 'GET', body }: Req
   } catch (error) {
     if (error instanceof ApiError) throw error;
     if (controller.signal.aborted) {
-      throw new ApiError('Сервер не ответил за 10 секунд. Повторите попытку.', null, 'TIMEOUT', path);
+      throw new ApiError('Сервер не ответил за ' + Math.round(timeoutMs / 1000) + ' секунд. Повторите попытку.', null, 'TIMEOUT', path);
     }
     throw new ApiError('Нет связи с сервером. Проверьте подключение и повторите.', null, 'NETWORK_ERROR', path);
   } finally { clearTimeout(timer); }
@@ -257,12 +259,12 @@ export const httpApi: TaskApi = {
 
   async analyzeDraft({ draft, topic }): Promise<AnalyzeDraftResponse> {
     const endpoint = '/api/ai/analyze-draft';
-    return readAnalysis(await requestJson<unknown>(endpoint, { method: 'POST', body: { draft, topic } }), endpoint);
+    return readAnalysis(await requestJson<unknown>(endpoint, { method: 'POST', timeoutMs: aiTimeoutMs, body: { draft, topic } }), endpoint);
   },
 
   async buildTaskCard({ draft, topic, questions, answers }): Promise<BuildTaskCardResponse> {
     const endpoint = '/api/ai/build-card';
-    const result = await requestJson<unknown>(endpoint, { method: 'POST', body: { draft, topic, questions,
+    const result = await requestJson<unknown>(endpoint, { method: 'POST', timeoutMs: aiTimeoutMs, body: { draft, topic, questions,
       answers: answers.map(({ question_id, answer }) => ({ question_id, answer })) } });
     if (!isRecord(result) || !isSource(result.source)) invalidResponse(endpoint);
     return { card: readCard(result.card, endpoint), source: result.source };

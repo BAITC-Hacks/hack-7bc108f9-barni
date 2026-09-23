@@ -1,6 +1,7 @@
 import { useEffect, useState } from 'react';
 import { Link, NavLink, Navigate, Route, Routes } from 'react-router-dom';
 import { api, errorMessage } from './api/client';
+import AmbientBackground from './components/AmbientBackground';
 import CreatePage from './pages/CreatePage';
 import CatalogPage from './pages/CatalogPage';
 import TaskPage from './pages/TaskPage';
@@ -79,6 +80,7 @@ export default function App() {
   }
 
   return <div className="app-shell">
+    <AmbientBackground />
     <header className="site-header">
       <div className="header-main">
         <Link className="brand" to="/create" aria-label="ASAR — главная">

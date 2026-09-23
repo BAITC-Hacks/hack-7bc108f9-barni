@@ -5,7 +5,7 @@ import os
 from collections.abc import Callable
 from typing import TypeVar
 
-from openai import APIError, AsyncOpenAI
+from openai import NOT_GIVEN, APIError, AsyncOpenAI
 from pydantic import BaseModel
 
 from app.schemas.ai import (
@@ -115,6 +115,10 @@ class AIService:
                 async with asyncio.timeout(TIMEOUT_SECONDS):
                     response = await self.client.responses.parse(
                         model=self.model,
+                        reasoning={"effort": "low"}
+                        if self.model == "gpt-5-mini"
+                        or self.model.startswith("gpt-5-mini-")
+                        else NOT_GIVEN,
                         instructions=SYSTEM_PROMPT
                         + prompt
                         + (
@@ -180,7 +184,7 @@ class AIService:
 async def get_ai_service():
     # Lazy initialization lets the backend start and analyze offline without a key.
     key = os.getenv("OPENAI_API_KEY", "").strip()
-    model = os.getenv("OPENAI_MODEL", "gpt-4.1-mini")
+    model = os.getenv("OPENAI_MODEL", "gpt-5-mini")
     if not key:
         yield AIService(None, model)
         return

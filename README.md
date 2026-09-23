@@ -152,7 +152,7 @@ docker compose down
 
 ```env
 OPENAI_API_KEY=
-OPENAI_MODEL=gpt-4.1-mini
+OPENAI_MODEL=gpt-5-mini
 DATABASE_URL=postgresql+psycopg://postgres:postgres@postgres:5432/hackalem
 VITE_API_URL=http://localhost:8000
 ```
@@ -483,7 +483,7 @@ Live-сценарии проверяют:
 - `null` для отсутствующих фактов;
 - реальный Structured Output через FastAPI endpoints.
 
-Использованная при проверке модель:
+Модель предыдущего прогона (исторический результат):
 
 ```text
 gpt-4.1-mini

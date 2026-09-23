@@ -14,8 +14,8 @@ export default function ProductIntro() {
     <h1 id="product-title">Опишите задачу бизнеса.<span>Найдите студенческую команду.</span></h1>
     <p className="product-intro__description">AI поможет уточнить детали и собрать понятную карточку задачи. Опубликуйте её, получите предложения студенческих команд и выберите, с кем работать.</p>
     <div className="product-intro__links">
-      <a href="#how-it-works">Как это работает <span aria-hidden="true">↓</span></a>
-      <Link to="/catalog">Я из команды <span aria-hidden="true">↗</span></Link>
+      <a href="#how-it-works">Как это работает <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true"><path d="M12 5v14m-6-6 6 6 6-6"/></svg></a>
+      <Link to="/catalog">Я из команды <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true"><path d="M6 18 18 6M6 6h12v12"/></svg></Link>
     </div>
     <div className="product-intro__path" aria-label="От запроса бизнеса через помощь AI к совместному проекту">
       <span>Запрос бизнеса</span><span aria-hidden="true">→</span><span>Помощь AI</span><span aria-hidden="true">→</span><span>Совместный проект</span>

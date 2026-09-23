@@ -1,5 +1,6 @@
 import { useEffect, useState } from 'react';
 import { Link } from 'react-router-dom';
+import { ArrowUpRight, Send } from 'lucide-react';
 import { api, errorMessage } from '../api/client';
 import type { CatalogTask, CurrentDemoRole, ProposalStatus, ReadinessLevel, TeamProposal } from '../types';
 
@@ -152,7 +153,7 @@ export default function CatalogPage({ role }: { role: CurrentDemoRole }) {
 
     {role.type === 'team' && role.team_id && <section className="surface-section" aria-labelledby="team-proposals-heading">
       <div className="section-heading">
-        <span className="section-index">↗</span>
+        <span className="section-index proposal-section-icon" aria-hidden="true"><Send size={28} strokeWidth={1.7} /></span>
         <div>
           <h2 id="team-proposals-heading">Мои предложения</h2>
           <p>Предложения команды «{role.label}» и решения по ним.</p>
@@ -212,8 +213,8 @@ export default function CatalogPage({ role }: { role: CurrentDemoRole }) {
           </div>
           <div className="task-row__end">
             <div className="row-score"><strong>{task.score}</strong><span>/100</span></div>
-            <Link className="row-open" to={taskPath} aria-label={'Открыть задачу «' + title + '»'}>↗</Link>
-            <Link className="button button-secondary row-open-text" to={taskPath}>Открыть задачу</Link>
+            <Link className="row-open" to={taskPath} aria-label={'Открыть задачу «' + title + '»'}><ArrowUpRight size={22} strokeWidth={1.7} aria-hidden="true" /></Link>
+            <Link className="button button-secondary row-open-text" to={taskPath}>Открыть задачу <ArrowUpRight size={18} strokeWidth={1.7} aria-hidden="true" /></Link>
           </div>
         </article>;
       })}

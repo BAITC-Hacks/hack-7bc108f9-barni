@@ -227,7 +227,7 @@ export default function CreatePage() {
           <label className="field"><span>Какую задачу вы хотите решить?</span><textarea ref={draftInputRef} className="draft-input" rows={6} maxLength={20000} value={draft} onChange={(event) => setDraft(event.target.value)} placeholder="Например: новые сотрудники долго ищут учебные материалы. Хотим сделать обучение понятнее…" disabled={busy !== null} /></label>
           {!draft.trim() && <div className="draft-example"><span>Пока нет описания?</span><button type="button" onClick={fillExample} disabled={busy !== null || metaLoading || Boolean(metaError)}>Попробовать на примере <span aria-hidden="true">↗</span></button></div>}
           <div className="action-row"><button className="button button-primary" type="button" onClick={analyze} aria-busy={busy === 'analyzing' || busy === 'building'} disabled={busy !== null || metaLoading || Boolean(metaError) || !draft.trim() || !topic}>{busy === 'building' ? 'Собираем карточку…' : busy === 'analyzing' ? 'Анализируем…' : 'Уточнить задачу с AI'} <span aria-hidden="true">↗</span></button></div>
-          <p className="action-note">Вы проверите и подтвердите карточку перед публикацией.</p>
+          <p className="action-note" role="status">{busy === 'analyzing' || busy === 'building' ? 'AI обрабатывает описание. Это может занять до минуты — дождитесь ответа.' : 'Вы проверите и подтвердите карточку перед публикацией.'}</p>
           <ErrorNotice message={error} onDismiss={() => setError('')} disabled={busy !== null} onRetry={analyze} />
         </section>}
 
@@ -240,6 +240,7 @@ export default function CreatePage() {
             <span className="question-number">0{index + 1}</span><span className="question-body"><strong>{question.text}</strong><textarea rows={3} required value={answers[question.id] ?? ''} onChange={(event) => setAnswers({ ...answers, [question.id]: event.target.value })} placeholder="Ваш ответ" disabled={busy !== null} /></span>
           </label>)}</div>
           <div className="action-row"><button className="button button-primary" type="button" onClick={buildCard} aria-busy={busy === 'building'} disabled={busy !== null || !allAnswered}>{busy === 'building' ? 'Собираем карточку…' : 'Сформировать карточку'} <span aria-hidden="true">↗</span></button><button className="button button-text" type="button" onClick={() => { setError(''); setStage('draft'); }} disabled={busy !== null}>Назад к описанию</button></div>
+          <p className="action-note" role="status">{busy === 'building' ? 'AI собирает карточку. Это может занять до минуты — ответы сохраняются.' : ''}</p>
           <ErrorNotice message={error} onDismiss={() => setError('')} disabled={busy !== null} onRetry={buildCard} />
         </section>}
 
