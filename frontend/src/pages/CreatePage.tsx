@@ -1,71 +1,89 @@
-import { useState } from 'react';
-import { Link, useNavigate } from 'react-router';
-import { api, errorMessage } from '../api';
+﻿import { useState } from 'react';
+import { Link } from 'react-router-dom';
+import { api, errorMessage } from '../api/client';
 import ScorePanel from '../components/ScorePanel';
 import TaskCardEditor from '../components/TaskCardEditor';
-import type { AnalyzeResult, CardField, Task, TaskCard } from '../types';
+import type {
+  AnalyzeDraftResponse, CardField, PublishResult, QuestionAnswer, ScoreResult, TaskCard,
+} from '../types';
 
+type Stage = 'draft' | 'questions' | 'card' | 'confirmed' | 'published';
 type Busy = 'analyzing' | 'building' | 'confirming' | 'publishing' | null;
 
-const steps = ['Описание', 'Вопросы AI', 'Карточка', 'Публикация'];
+const steps = [
+  { stage: 'draft', label: 'Описание' },
+  { stage: 'questions', label: 'Вопросы AI' },
+  { stage: 'card', label: 'Карточка' },
+  { stage: 'confirmed', label: 'Рейтинг' },
+  { stage: 'published', label: 'Публикация' },
+] as const;
+
+function ErrorNotice({ message, onDismiss }: { message: string; onDismiss: () => void }) {
+  if (!message) return null;
+  return <div className="error-banner" role="alert"><span>{message}</span>
+    <button type="button" onClick={onDismiss} aria-label="Закрыть сообщение">×</button>
+  </div>;
+}
 
 export default function CreatePage() {
-  const navigate = useNavigate();
+  const [stage, setStage] = useState<Stage>('draft');
   const [draft, setDraft] = useState('');
   const [topic, setTopic] = useState('');
-  const [taskId, setTaskId] = useState<string | null>(null);
-  const [analysis, setAnalysis] = useState<AnalyzeResult | null>(null);
+  const [analysis, setAnalysis] = useState<AnalyzeDraftResponse | null>(null);
   const [answers, setAnswers] = useState<Record<string, string>>({});
   const [card, setCard] = useState<TaskCard | null>(null);
-  const [confirmed, setConfirmed] = useState<Task | null>(null);
-  const [dirty, setDirty] = useState(false);
+  const [score, setScore] = useState<ScoreResult | null>(null);
+  const [published, setPublished] = useState<PublishResult | null>(null);
   const [busy, setBusy] = useState<Busy>(null);
   const [error, setError] = useState('');
-  const [published, setPublished] = useState(false);
 
-  const activeStep = published ? 3 : card ? 2 : analysis ? 1 : 0;
+  const activeStep = steps.findIndex((item) => item.stage === stage);
+  const allAnswered = Boolean(analysis?.questions.length) &&
+    analysis!.questions.every((question) => Boolean(answers[question.id]?.trim()));
 
   async function analyze() {
-    if (!draft.trim() || !topic.trim()) { setError('Заполните описание и тему задачи.'); return; }
+    if (!draft.trim() || !topic.trim()) return;
     setBusy('analyzing'); setError('');
     try {
-      let id = taskId;
-      if (!id) {
-        const task = await api.createTask(draft.trim(), topic.trim());
-        id = task.id;
-        setTaskId(id);
-      }
-      const result = await api.analyzeDraft(draft.trim(), topic.trim());
+      const result = await api.analyzeDraft({ draft: draft.trim(), topic: topic.trim() });
       if (!Array.isArray(result.questions) || result.questions.length < 3 ||
-          result.questions.some((question) => !question.text?.trim() || !result.missing_fields?.includes(question.target_field))) {
+          !Array.isArray(result.missing_fields) ||
+          result.questions.some((question) => !question.id || !question.text?.trim() ||
+            !result.missing_fields.includes(question.target_field))) {
         throw new Error('AI вернул неполные вопросы. Попробуйте ещё раз.');
       }
       setAnalysis(result);
+      setAnswers({});
       setCard(null);
-      setConfirmed(null);
-      setPublished(false);
+      setScore(null);
+      setStage('questions');
     } catch (caught) { setError(errorMessage(caught)); }
     finally { setBusy(null); }
   }
 
   async function buildCard() {
-    if (!analysis) return;
+    if (!analysis || !allAnswered) return;
+    const questionAnswers: QuestionAnswer[] = analysis.questions.map((question) => ({
+      question_id: question.id,
+      target_field: question.target_field,
+      answer: (answers[question.id] ?? '').trim(),
+    }));
     setBusy('building'); setError('');
     try {
-      const result = await api.buildCard(draft.trim(), analysis.questions.map((question) => ({
-        question_id: question.id, answer: answers[question.id]?.trim() ?? '',
-      })));
-      const values = Object.fromEntries([
-        ['title', null], ['topic', null], ['context', null], ['need', null], ['users', null], ['data', null],
-        ['constraints', null], ['expected_result', null], ['success_criteria', null], ['contact', null], ['interaction_format', null],
-      ]) as TaskCard;
-      for (const key of Object.keys(values) as CardField[]) {
-        const value = result.card?.[key];
-        values[key] = typeof value === 'string' ? value : null;
-      }
-      values.topic = values.topic || topic.trim();
-      setCard(values);
-      setDirty(true);
+      const result = await api.buildTaskCard({ draft: draft.trim(), topic: topic.trim(), answers: questionAnswers });
+      if (!result.card || typeof result.card !== 'object') throw new Error('Не удалось получить карточку.');
+      const fields: CardField[] = [
+        'title', 'topic', 'context', 'need', 'users', 'data', 'constraints',
+        'expected_result', 'success_criteria', 'contact', 'interaction_format',
+      ];
+      const safeCard = Object.fromEntries(fields.map((field) => {
+        const value = result.card[field];
+        return [field, typeof value === 'string' ? value : null];
+      })) as TaskCard;
+      safeCard.topic = safeCard.topic || topic.trim();
+      setCard(safeCard);
+      setScore(null);
+      setStage('card');
     } catch (caught) { setError(errorMessage(caught)); }
     finally { setBusy(null); }
   }
@@ -73,27 +91,44 @@ export default function CreatePage() {
   function updateCard(field: CardField, value: string) {
     if (!card) return;
     setCard({ ...card, [field]: value });
-    setDirty(true);
   }
 
   async function confirm() {
-    if (!taskId || !card) return;
-    if (!card.title?.trim() || !card.topic?.trim()) { setError('Укажите название и тему задачи.'); return; }
+    if (!card) return;
+    if (!card.title?.trim() || !card.topic?.trim()) {
+      setError('Укажите название и тему задачи.');
+      return;
+    }
     setBusy('confirming'); setError('');
     try {
-      const task = await api.confirmTask(taskId, card);
-      setConfirmed(task);
-      setDirty(false);
+      const result = await api.confirmTaskCard({ card });
+      if (!Number.isFinite(result.score) || result.score < 0 || result.score > 100 ||
+          !Array.isArray(result.breakdown) || !Array.isArray(result.missing_fields) ||
+          result.breakdown.reduce((sum, item) => sum + item.earned, 0) !== result.score) {
+        throw new Error('Сервер вернул некорректный рейтинг. Попробуйте ещё раз.');
+      }
+      setScore(result);
+      setStage('confirmed');
     } catch (caught) { setError(errorMessage(caught)); }
     finally { setBusy(null); }
   }
 
+  function returnToEdit() {
+    setScore(null);
+    setError('');
+    setStage('card');
+  }
+
   async function publish() {
-    if (!taskId || !confirmed || dirty) return;
+    if (!card || !score || stage !== 'confirmed') return;
     setBusy('publishing'); setError('');
     try {
-      await api.publishTask(taskId);
-      setPublished(true);
+      const result = await api.publishTask({ card });
+      if (!result.task_id || result.status !== 'published') {
+        throw new Error('Сервер не подтвердил публикацию.');
+      }
+      setPublished(result);
+      setStage('published');
     } catch (caught) { setError(errorMessage(caught)); }
     finally { setBusy(null); }
   }
@@ -105,38 +140,53 @@ export default function CreatePage() {
       <div className="heading-art" aria-hidden="true"><span className="art-circle art-circle-one"/><span className="art-circle art-circle-two"/><span className="art-cross">✳</span></div>
     </div>
     <ol className="stepper" aria-label="Этапы создания задачи">
-      {steps.map((step, index) => <li key={step} className={index === activeStep ? 'current' : index < activeStep ? 'done' : ''}>
-        <span>{index < activeStep ? '✓' : `0${index + 1}`}</span>{step}</li>)}
+      {steps.map((item, index) => <li key={item.stage} className={index === activeStep ? 'current' : index < activeStep ? 'done' : ''}>
+        <span>{index < activeStep ? '✓' : '0' + (index + 1)}</span>{item.label}
+      </li>)}
     </ol>
     <div className="workspace-grid">
       <div className="workspace-main">
-        {!analysis && <section className="surface-section">
+        {stage === 'draft' && <section className="surface-section">
           <div className="section-heading"><span className="section-index">01</span><div><h2>Расскажите о задаче</h2><p>Можно написать свободным текстом. Необязательно знать все детали заранее.</p></div></div>
-          <label className="field"><span>Тема</span><input value={topic} onChange={(event) => { setTopic(event.target.value); setTaskId(null); }} placeholder="Например, автоматизация" disabled={busy !== null} /></label>
-          <label className="field"><span>Описание задачи</span><textarea className="draft-input" rows={7} value={draft} onChange={(event) => { setDraft(event.target.value); setTaskId(null); }} placeholder="Например: хотим улучшить обработку заявок клиентов…" disabled={busy !== null} /></label>
-          <div className="action-row"><button className="button button-primary" type="button" onClick={analyze} disabled={busy !== null}>{busy === 'analyzing' ? 'Анализируем…' : 'Проанализировать'} <span aria-hidden="true">↗</span></button><span className="action-note">AI не добавляет неизвестные факты</span></div>
+          <label className="field"><span>Тема</span><input value={topic} onChange={(event) => setTopic(event.target.value)} placeholder="Например, автоматизация" disabled={busy !== null} /></label>
+          <label className="field"><span>Описание задачи</span><textarea className="draft-input" rows={7} value={draft} onChange={(event) => setDraft(event.target.value)} placeholder="Например: хотим улучшить обработку заявок клиентов…" disabled={busy !== null} /></label>
+          <div className="action-row"><button className="button button-primary" type="button" onClick={analyze} disabled={busy !== null || !draft.trim() || !topic.trim()}>{busy === 'analyzing' ? 'Анализируем…' : 'Проанализировать задачу'} <span aria-hidden="true">↗</span></button><span className="action-note">AI не добавляет неизвестные факты</span></div>
+          <ErrorNotice message={error} onDismiss={() => setError('')} />
         </section>}
 
-        {analysis && !card && <section className="surface-section">
-          <div className="section-heading"><span className="section-index">02</span><div><h2>Уточним детали</h2><p>Ответы помогут сделать карточку полезной для студенческих команд.</p></div></div>
+        {stage === 'questions' && analysis && <section className="surface-section">
+          <div className="section-heading"><span className="section-index">02</span><div><h2>Уточним детали</h2><p>Ответьте на каждый вопрос, чтобы собрать карточку.</p></div></div>
           <div className="question-list">{analysis.questions.map((question, index) => <label className="question" key={question.id}>
-            <span className="question-number">0{index + 1}</span><span className="question-body"><strong>{question.text}</strong><textarea rows={3} value={answers[question.id] ?? ''} onChange={(event) => setAnswers({ ...answers, [question.id]: event.target.value })} placeholder="Ваш ответ, если информация уже известна" disabled={busy !== null}/></span>
+            <span className="question-number">0{index + 1}</span><span className="question-body"><strong>{question.text}</strong><textarea rows={3} required value={answers[question.id] ?? ''} onChange={(event) => setAnswers({ ...answers, [question.id]: event.target.value })} placeholder="Ваш ответ" disabled={busy !== null} /></span>
           </label>)}</div>
-          <div className="action-row"><button className="button button-primary" type="button" onClick={buildCard} disabled={busy !== null}>{busy === 'building' ? 'Собираем карточку…' : 'Сформировать карточку'} <span aria-hidden="true">↗</span></button><button className="button button-text" type="button" onClick={() => setAnalysis(null)} disabled={busy !== null}>Назад к описанию</button></div>
+          <div className="action-row"><button className="button button-primary" type="button" onClick={buildCard} disabled={busy !== null || !allAnswered}>{busy === 'building' ? 'Собираем карточку…' : 'Сформировать карточку'} <span aria-hidden="true">↗</span></button><button className="button button-text" type="button" onClick={() => { setError(''); setStage('draft'); }} disabled={busy !== null}>Назад к описанию</button></div>
+          <ErrorNotice message={error} onDismiss={() => setError('')} />
         </section>}
 
-        {card && !published && <section className="surface-section">
-          <div className="section-heading"><span className="section-index">03</span><div><h2>Проверьте карточку</h2><p>Каждое поле можно изменить. Пустые поля останутся видимыми как пробелы.</p></div></div>
+        {stage === 'card' && card && <section className="surface-section">
+          <div className="section-heading"><span className="section-index">03</span><div><h2>Проверьте карточку</h2><p>Каждое поле можно изменить. Пустые поля останутся видимыми.</p></div></div>
           <TaskCardEditor card={card} onChange={updateCard} disabled={busy !== null} />
-          <div className="action-row action-row--bordered"><button className="button button-primary" type="button" onClick={confirm} disabled={busy !== null}>{busy === 'confirming' ? 'Пересчитываем…' : confirmed ? 'Подтвердить и пересчитать' : 'Подтвердить и рассчитать'}</button>{confirmed && dirty && <span className="inline-warning">Есть изменения — рейтинг нужно пересчитать</span>}</div>
+          <div className="action-row action-row--bordered"><button className="button button-primary" type="button" onClick={confirm} disabled={busy !== null}>{busy === 'confirming' ? 'Пересчитываем…' : 'Подтвердить и пересчитать'}</button></div>
+          <ErrorNotice message={error} onDismiss={() => setError('')} />
         </section>}
 
-        {published && confirmed && <section className="success-panel" role="status"><span className="success-icon">✓</span><p className="eyebrow">Готово</p><h2>Задача опубликована</h2><p>Команды увидят её в общем каталоге. Рейтинг не ограничивает доступ к отклику.</p><div className="action-row"><button className="button button-primary" type="button" onClick={() => navigate(`/tasks/${taskId}`)}>Открыть задачу <span aria-hidden="true">↗</span></button><Link className="button button-secondary" to="/catalog">Перейти в каталог</Link></div></section>}
+        {stage === 'confirmed' && score && <section className="surface-section confirmation-section">
+          <div className="section-heading"><span className="section-index">04</span><div><h2>Карточка подтверждена</h2><p>Рейтинг рассчитан. Можно вернуться к редактированию или опубликовать задачу.</p></div></div>
+          <p className="confirmed-copy">Текущий рейтинг: <strong>{score.score} / 100</strong> · {score.readiness_label}</p>
+          <div className="action-row"><button className="button button-primary" type="button" onClick={publish} disabled={busy !== null}>{busy === 'publishing' ? 'Публикуем…' : 'Опубликовать задачу'} <span aria-hidden="true">↗</span></button><button className="button button-secondary" type="button" onClick={returnToEdit} disabled={busy !== null}>Вернуться к редактированию</button></div>
+          <p className="action-note">Минимального рейтинга для публикации нет.</p>
+          <ErrorNotice message={error} onDismiss={() => setError('')} />
+        </section>}
 
-        {error && <div className="error-banner" role="alert"><span>{error}</span><button type="button" onClick={() => setError('')} aria-label="Закрыть сообщение">×</button></div>}
+        {stage === 'published' && published && <section className="success-panel" role="status">
+          <span className="success-icon">✓</span><p className="eyebrow">Готово</p><h2>Задача опубликована</h2>
+          <p>Карточка сохранена вместе с рейтингом и уже доступна командам в каталоге.</p>
+          <p className="published-id">ID задачи: <code>{published.task_id}</code></p>
+          <div className="action-row"><Link className="button button-primary" to={"/tasks/" + encodeURIComponent(published.task_id)}>Открыть задачу <span aria-hidden="true">↗</span></Link><Link className="button button-secondary" to="/catalog">Перейти в каталог</Link></div>
+        </section>}
       </div>
       <aside className="workspace-aside">
-        {confirmed ? <><ScorePanel task={confirmed} /><div className="aside-action"><button className="button button-primary button-full" type="button" onClick={publish} disabled={busy !== null || dirty || published}>{busy === 'publishing' ? 'Публикуем…' : published ? 'Опубликовано' : 'Опубликовать задачу'}</button><small>Опубликовать можно после подтверждения карточки. Минимального рейтинга нет.</small></div></> : <div className="guide-panel"><span className="guide-mark">✳</span><p className="eyebrow">Как это работает</p><h2>Чёткая задача получает больше внимания</h2><p>AI поможет задать правильные вопросы. Вы решаете, какие сведения верны, и можете изменить любое поле.</p><div className="guide-points"><div><span>01</span>Опишите запрос своими словами</div><div><span>02</span>Ответьте на вопросы AI</div><div><span>03</span>Подтвердите и опубликуйте</div></div></div>}
+        {score ? <ScorePanel result={score} /> : <div className="guide-panel"><span className="guide-mark">✳</span><p className="eyebrow">Как это работает</p><h2>Чёткая задача получает больше внимания</h2><p>AI поможет задать правильные вопросы. Вы проверите факты и сможете изменить любое поле.</p><div className="guide-points"><div><span>01</span>Опишите запрос своими словами</div><div><span>02</span>Ответьте на вопросы AI</div><div><span>03</span>Подтвердите и опубликуйте</div></div></div>}
       </aside>
     </div>
   </div>;

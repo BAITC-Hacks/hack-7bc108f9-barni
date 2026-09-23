@@ -1,41 +1,83 @@
-import { useState } from 'react';
-import { Link, NavLink, Navigate, Route, Routes } from 'react-router';
+﻿import { useEffect, useState } from 'react';
+import { Link, NavLink, Navigate, Route, Routes } from 'react-router-dom';
+import { api, isMockMode } from './api/client';
 import CreatePage from './pages/CreatePage';
 import CatalogPage from './pages/CatalogPage';
 import TaskPage from './pages/TaskPage';
-import { isMockMode } from './api';
-import { demoTeams } from './types';
+import type { CurrentDemoRole, Team } from './types';
 
-export interface DemoRole {
-  mode: 'business' | 'team';
-  teamId: string;
+const ROLE_KEY = 'asar:demo-role:v1';
+const businessRole: CurrentDemoRole = { type: 'business', label: 'Бизнес' };
+
+function loadRole(): CurrentDemoRole {
+  try {
+    const raw = window.localStorage.getItem(ROLE_KEY);
+    if (!raw) return businessRole;
+    const parsed: unknown = JSON.parse(raw);
+    if (!parsed || typeof parsed !== 'object') return businessRole;
+    const candidate = parsed as Partial<CurrentDemoRole>;
+    if (candidate.type === 'business') return businessRole;
+    if (candidate.type === 'team' && typeof candidate.team_id === 'string' && typeof candidate.label === 'string') {
+      return { type: 'team', team_id: candidate.team_id, label: candidate.label };
+    }
+  } catch {
+    // Повреждённое значение роли безопасно заменяется ролью бизнеса.
+  }
+  return businessRole;
 }
 
 export default function App() {
-  const [role, setRole] = useState<DemoRole>({ mode: 'business', teamId: demoTeams[0]!.id });
+  const [role, setRole] = useState<CurrentDemoRole>(loadRole);
+  const [teams, setTeams] = useState<Team[]>([]);
+
+  useEffect(() => {
+    let active = true;
+    api.getTeams().then((result) => {
+      if (active) setTeams(result);
+    }).catch(() => {
+      if (active) setTeams([]);
+    });
+    return () => { active = false; };
+  }, []);
+
+  function changeRole(value: string) {
+    const next = value === 'business'
+      ? businessRole
+      : (() => {
+          const team = teams.find(({ id }) => id === value);
+          return team
+            ? { type: 'team' as const, team_id: team.id, label: team.name }
+            : businessRole;
+        })();
+    setRole(next);
+    try {
+      window.localStorage.setItem(ROLE_KEY, JSON.stringify(next));
+    } catch {
+      // Переключатель продолжает работать в текущей вкладке.
+    }
+  }
+
   return <div className="app-shell">
     <header className="site-header">
       <div className="header-main">
-        <Link className="brand" to="/create" aria-label="Barni — главная">
-          <span className="brand-mark"><span /></span><span>barni<span className="brand-dot">.</span></span>
-        </Link>
+        <Link className="brand" to="/create" aria-label="ASAR — главная">ASAR</Link>
         <nav className="main-nav" aria-label="Основная навигация">
           <NavLink to="/create" className={({ isActive }) => isActive ? 'nav-link active' : 'nav-link'}>Создать задачу</NavLink>
           <NavLink to="/catalog" className={({ isActive }) => isActive ? 'nav-link active' : 'nav-link'}>Каталог</NavLink>
         </nav>
         <div className="header-spacer" />
-        {isMockMode && <span className="demo-badge" title="Данные хранятся в этом браузере">Демо-данные</span>}
-        <div className="role-switch" aria-label="Демонстрационный режим">
-          <button type="button" className={role.mode === 'business' ? 'selected' : ''}
-            aria-pressed={role.mode === 'business'} onClick={() => setRole({ ...role, mode: 'business' })}>Бизнес</button>
-          <button type="button" className={role.mode === 'team' ? 'selected' : ''}
-            aria-pressed={role.mode === 'team'} onClick={() => setRole({ ...role, mode: 'team' })}>Команда</button>
-        </div>
-        {role.mode === 'team' && <label className="team-picker"><span className="sr-only">Профиль команды</span>
-          <select value={role.teamId} onChange={(event) => setRole({ mode: 'team', teamId: event.target.value })}>
-            {demoTeams.map((team) => <option key={team.id} value={team.id}>{team.name}</option>)}
+        <label className="role-control">
+          <span>Роль</span>
+          <select
+            aria-label="Демонстрационная роль"
+            value={role.type === 'business' ? 'business' : role.team_id}
+            onChange={(event) => changeRole(event.target.value)}
+          >
+            <option value="business">Бизнес</option>
+            {teams.map((team) => <option value={team.id} key={team.id}>{team.name}</option>)}
           </select>
-        </label>}
+        </label>
+        {isMockMode && <span className="demo-badge">Demo</span>}
       </div>
     </header>
     <main>
@@ -44,7 +86,10 @@ export default function App() {
         <Route path="/create" element={<CreatePage />} />
         <Route path="/catalog" element={<CatalogPage />} />
         <Route path="/tasks/:id" element={<TaskPage role={role} />} />
-        <Route path="*" element={<div className="not-found page-width"><p className="eyebrow">404</p><h1>Страница не найдена</h1><Link className="button button-primary" to="/catalog">Открыть каталог</Link></div>} />
+        <Route path="*" element={<div className="not-found page-width">
+          <h1>Страница не найдена</h1>
+          <Link className="button button-primary" to="/catalog">Перейти в каталог</Link>
+        </div>} />
       </Routes>
     </main>
   </div>;
