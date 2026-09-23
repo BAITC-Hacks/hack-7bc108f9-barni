@@ -57,7 +57,7 @@ call GET /api/tasks/00000000-0000-0000-0000-000000000000 404 | jq -e '.error.cod
 call POST /api/tasks 422 '{"draft_text":"x","topic":"unknown"}' | jq -e '.error.code == "VALIDATION_ERROR"' >/dev/null
 
 PARTIAL_CARD='{"title":"Оптимизация обработки заявок","topic":"automation","context":"Заявки приходят в WhatsApp и обрабатываются вручную","need":"Сократить время обработки заявок","data":"","users":"  ","constraints":null,"expected_result":null,"success_criteria":null,"contact":null,"interaction_format":null}'
-FULL_CARD='{"title":"Оптимизация обработки заявок","topic":"automation","context":"Заявки приходят в WhatsApp и обрабатываются вручную","need":"Сократить время обработки заявок","users":"Операторы поддержки","data":"Выгрузка заявок за 3 месяца в CSV","constraints":"2 недели, Python","expected_result":"Прототип бота","success_criteria":"Время ответа меньше 5 минут","contact":"@manager","interaction_format":"Созвон раз в неделю"}'
+FULL_CARD='{"title":"Оптимизация обработки заявок","topic":"automation","context":"Заявки приходят в WhatsApp и обрабатываются вручную","need":"Сократить время обработки заявок","users":"Операторы службы поддержки","data":"Выгрузка заявок за 3 месяца в CSV","constraints":"2 недели, Python","expected_result":"Прототип бота для заявок","success_criteria":"Время ответа меньше 5 минут","contact":"@manager","interaction_format":"Созвон раз в неделю"}'
 
 step "rating preview: partial card = 20, nothing saved"
 call POST /api/rating/preview 200 "{\"card\":$PARTIAL_CARD}" \

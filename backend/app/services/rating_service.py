@@ -24,16 +24,26 @@ def readiness_level(score: int) -> str:
     return next(level for minimum, level in LEVELS if score >= minimum)
 
 
-def is_filled(value: str | None) -> bool:
-    # Presence is binary: longer text never earns more points (tz.md §6.5).
-    return value is not None and re.search(r"\w", value) is not None
+WORD = re.compile(r"[^\W_]+")
+MIN_WORDS = 3
+MIN_CONTACT_LENGTH = 5
+
+
+def is_filled(field: str, value: str | None) -> bool:
+    # Binary: meeting the minimum earns full weight, longer text earns nothing more.
+    if value is None:
+        return False
+    value = value.strip()
+    if field == "contact":
+        return len(value) >= MIN_CONTACT_LENGTH and WORD.search(value) is not None
+    return len(WORD.findall(value)) >= MIN_WORDS
 
 
 def calculate_score(card: TaskCard) -> ScoreResult:
     breakdown: list[BreakdownItem] = []
     missing: list[MissingField] = []
     for field, label, points, recommendation in WEIGHTS:
-        filled = is_filled(getattr(card, field))
+        filled = is_filled(field, getattr(card, field))
         breakdown.append(
             BreakdownItem(
                 field=field,
