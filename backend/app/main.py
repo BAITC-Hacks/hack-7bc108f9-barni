@@ -10,6 +10,7 @@ from starlette.exceptions import HTTPException as StarletteHTTPException
 
 from app.api.ai import router as ai_router
 from app.api.meta import router as meta_router
+from app.api.rating import router as rating_router
 from app.api.tasks import router as tasks_router
 
 logger = logging.getLogger(__name__)
@@ -81,3 +82,4 @@ async def health():
 app.include_router(ai_router)
 app.include_router(meta_router)
 app.include_router(tasks_router)
+app.include_router(rating_router)
