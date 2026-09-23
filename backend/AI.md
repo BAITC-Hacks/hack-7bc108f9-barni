@@ -1,5 +1,40 @@
 # AI-модуль MVP
 
+## Проверка готовности — 2026-09-23
+
+На Python 3.12.14 с моделью `gpt-4.1-mini` выполнен полный прогон:
+**41 passed, 1 warning**, 17.66 секунды. Из них 37 проверок без реальной сети
+и 4 live-проверки (5 успешных операций с моделью):
+
+- слабое описание → вопросы → карточка с ответом пользователя;
+- подробное описание с явно заданными данными, пользователями, сроком и метрикой;
+- сохранение отрицаний: данных нет, сроки не определены, контакт не назначен;
+- отсутствие повторных вопросов о явно предоставленных сведениях.
+
+В live-проверках анализа fallback запрещён. Проверены null для отсутствующих
+фактов и реальный structured output через оба FastAPI endpoint. Первоначально
+модель путала need и context; в промпт добавлены определения полей, после чего
+проверки прошли. Эти примеры подтверждают работу MVP, но не гарантируют
+семантическую безошибочность на любом вводе.
+
+Ruff и `pip check` прошли. Предупреждение Starlette касается устаревающего
+адаптера `httpx` в TestClient; тесты не падают, предупреждение не скрыто.
+Версии: OpenAI SDK 2.54.0, FastAPI 0.141.1, Pydantic 2.13.5, pytest 9.1.1.
+
+Повтор полного прогона в подготовленном окружении (с расходом API-квоты):
+
+```powershell
+$env:RUN_LIVE_AI = '1'
+.\.venv312\Scripts\python -m pytest -c backend/pytest.ini backend/tests -q -p no:cacheprovider
+Remove-Item Env:RUN_LIVE_AI
+```
+
+Локальный сервер на проверенной версии Python:
+
+```powershell
+.\.venv312\Scripts\python -m uvicorn app.main:app --app-dir backend --env-file backend/.env --reload
+```
+
 Python 3.12, FastAPI, Pydantic v2, официальный OpenAI Python SDK.
 Модуль не хранит данные, не вычисляет рейтинг и не публикует задачи.
 
@@ -22,6 +57,22 @@ Copy-Item backend/.env.example backend/.env
 ```powershell
 .\.venv\Scripts\python -m pytest -c backend/pytest.ini backend/tests -q
 ```
+
+Тесты с реальной моделью запускаются отдельно и расходуют API-квоту. Они читают
+ключ из `backend/.env`, отправляют только синтетические примеры и требуют
+`X-AI-Fallback: false` — шаблонный ответ не считается успешной проверкой модели:
+
+```powershell
+$env:RUN_LIVE_AI = '1'
+.\.venv\Scripts\python -m pytest -c backend/pytest.ini backend/tests/test_ai_live.py -q -p no:cacheprovider
+Remove-Item Env:RUN_LIVE_AI
+```
+
+Без `RUN_LIVE_AI=1` эти проверки помечаются `skipped`. `-p no:cacheprovider`
+отключает только кеш pytest и полезен при запуске от разных Windows-пользователей.
+Для подготовленного локального Python 3.12 используйте `.venv312` вместо `.venv`.
+При ошибках провайдера в логах записываются только класс ошибки и HTTP-статус,
+без ключа, текстов пользователя и тела ответа OpenAI.
 
 ## Backend
 

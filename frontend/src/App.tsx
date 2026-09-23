@@ -1,4 +1,4 @@
-﻿import { useEffect, useState } from 'react';
+import { useEffect, useState } from 'react';
 import { Link, NavLink, Navigate, Route, Routes } from 'react-router-dom';
 import { api, isMockMode } from './api/client';
 import CreatePage from './pages/CreatePage';
@@ -29,16 +29,36 @@ function loadRole(): CurrentDemoRole {
 export default function App() {
   const [role, setRole] = useState<CurrentDemoRole>(loadRole);
   const [teams, setTeams] = useState<Team[]>([]);
+  const [teamsReady, setTeamsReady] = useState(false);
 
   useEffect(() => {
     let active = true;
     api.getTeams().then((result) => {
-      if (active) setTeams(result);
+      if (!active) return;
+      setTeams(result);
+      setRole((current) => {
+        if (current.type !== 'team') return current;
+        const team = result.find(({ id }) => id === current.team_id);
+        return team ? { type: 'team', team_id: team.id, label: team.name } : businessRole;
+      });
+      setTeamsReady(true);
     }).catch(() => {
-      if (active) setTeams([]);
+      if (!active) return;
+      setTeams([]);
+      setRole(businessRole);
+      setTeamsReady(true);
     });
     return () => { active = false; };
   }, []);
+
+  useEffect(() => {
+    if (!teamsReady) return;
+    try {
+      window.localStorage.setItem(ROLE_KEY, JSON.stringify(role));
+    } catch {
+      // Переключатель продолжает работать в текущей вкладке.
+    }
+  }, [role, teamsReady]);
 
   function changeRole(value: string) {
     const next = value === 'business'
@@ -50,11 +70,6 @@ export default function App() {
             : businessRole;
         })();
     setRole(next);
-    try {
-      window.localStorage.setItem(ROLE_KEY, JSON.stringify(next));
-    } catch {
-      // Переключатель продолжает работать в текущей вкладке.
-    }
   }
 
   return <div className="app-shell">
@@ -73,7 +88,7 @@ export default function App() {
           <span>Роль</span>
           <select
             aria-label="Демонстрационная роль"
-            value={role.type === 'business' ? 'business' : role.team_id}
+            value={!teamsReady || role.type === 'business' ? 'business' : role.team_id}
             onChange={(event) => changeRole(event.target.value)}
           >
             <option value="business">Бизнес</option>
@@ -87,8 +102,8 @@ export default function App() {
       <Routes>
         <Route path="/" element={<Navigate to="/create" replace />} />
         <Route path="/create" element={<CreatePage />} />
-        <Route path="/catalog" element={<CatalogPage />} />
-        <Route path="/tasks/:id" element={<TaskPage role={role} />} />
+        <Route path="/catalog" element={<CatalogPage role={teamsReady ? role : businessRole} />} />
+        <Route path="/tasks/:id" element={<TaskPage role={teamsReady ? role : businessRole} />} />
         <Route path="*" element={<div className="not-found page-width">
           <h1>Страница не найдена</h1>
           <Link className="button button-primary" to="/catalog">Перейти в каталог</Link>

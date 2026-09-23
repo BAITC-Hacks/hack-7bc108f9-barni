@@ -1,0 +1,10 @@
+.venv/
+.venv312/
+.python/
+.uv-cache/
+__pycache__/
+.pytest_cache/
+.ruff_cache/
+.env
+.env.*
+!.env.example

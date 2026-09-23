@@ -2,11 +2,10 @@ import uuid
 from datetime import datetime
 from typing import Annotated, Literal
 
-from pydantic import BaseModel, ConfigDict, Field, StringConstraints
+from pydantic import BaseModel, BeforeValidator, ConfigDict, Field, StringConstraints
 
-from app.schemas.ai import TaskCard
+from app.schemas.ai import CardField, TaskCard, TopicSlug
 
-TopicSlug = Literal["automation", "analytics", "marketing", "education", "finance", "other"]
 ReadinessSlug = Literal["draft", "working", "ready", "priority"]
 
 TOPICS = [
@@ -62,7 +61,65 @@ class TaskCreate(BaseModel):
     topic: TopicSlug | None = None
 
 
-class TaskOut(BaseModel):
+def blank_to_none(value):
+    if isinstance(value, str) and not value.strip():
+        return None
+    return value.strip() if isinstance(value, str) else value
+
+
+CardText = Annotated[str | None, BeforeValidator(blank_to_none)]
+
+
+class ConfirmCard(BaseModel):
+    """Card edited by the business: blank strings become null, topic must be a slug."""
+
+    model_config = ConfigDict(extra="forbid")
+
+    title: CardText = None
+    topic: Annotated[TopicSlug | None, BeforeValidator(blank_to_none)] = None
+    context: CardText = None
+    need: CardText = None
+    users: CardText = None
+    data: CardText = None
+    constraints: CardText = None
+    expected_result: CardText = None
+    success_criteria: CardText = None
+    contact: CardText = None
+    interaction_format: CardText = None
+
+    def to_task_card(self) -> TaskCard:
+        return TaskCard.model_validate(self.model_dump())
+
+
+class CardBody(BaseModel):
+    model_config = ConfigDict(extra="forbid")
+
+    card: ConfirmCard
+
+
+class BreakdownItem(BaseModel):
+    field: CardField
+    label: str
+    earned: int
+    maximum: int
+    reason: str
+
+
+class MissingField(BaseModel):
+    field: CardField
+    label: str
+    potential_points: int
+    recommendation: str
+
+
+class ScoreResult(BaseModel):
+    score: int = Field(ge=0, le=100)
+    readiness_level: ReadinessSlug
+    breakdown: list[BreakdownItem]
+    missing_fields: list[MissingField]
+
+
+class TaskDetail(BaseModel):
     model_config = ConfigDict(from_attributes=True)
 
     id: uuid.UUID
@@ -73,9 +130,10 @@ class TaskOut(BaseModel):
     card: TaskCard
     score: int | None = Field(ge=0, le=100)
     readiness_level: ReadinessSlug | None
-    score_breakdown: list[dict] | None
-    missing_fields: list[dict] | None
+    score_breakdown: list[BreakdownItem] | None
+    missing_fields: list[MissingField] | None
     confirmed_at: datetime | None
     published_at: datetime | None
     created_at: datetime
     updated_at: datetime
+    proposals_count: int

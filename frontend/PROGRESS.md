@@ -1,40 +1,37 @@
-﻿# Frontend Progress
+# Frontend Progress
 
 ## Time
-- Updated: 2026-09-23 15:41 +05:00.
-- Current HEAD: d609528 (frontend); no Git history operation in this task.
-- Hackathon time remaining: approximately 164 minutes, extrapolated from the user's earlier 200-minute estimate; live countdown unavailable.
-- Reserved for demo, README and submission: 30 minutes.
-- Current task budget: 25 minutes, started approximately 15:30 +05:00.
-- Estimated frontend integration after backend completion: 35–45 minutes.
+- Updated: 2026-09-23 16:21 +05:00.
+- Frontend HEAD: 342f9b0. Latest fetched origin/main: 138b54f; compared with 898e5cf it adds only data/seed.json, not push 2 routes.
+- Hackathon time remaining: approximately 125 minutes based on the user's earlier estimate; live countdown unavailable.
+- Reserve for demo, README and submission: 30 minutes.
 
 ## Done
-- DONE — Existing mock flow covers create, rating, publishing, catalog, task details, team proposals and localStorage. Mock remains the default.
-- DONE — Frontend/backend contract documents all 11 operations against current routes and schemas.
-- DONE — Typed HTTP adapter uses native fetch, JSON handling, 10-second timeout and ApiError. API mode is selected centrally, with no mock fallback.
-- DONE — Build-card now passes questions and answers; the HTTP adapter omits the internal target_field from answer payloads. Mock builder accepts the shared input.
-- DONE — Light page palette with dark navy accent applied across the existing frontend layout.
-- DONE — Production frontend build passes.
+- DONE — Copied backend push 1 and Compose/example configuration from main into this checkout; frontend branch and history preserved.
+- DONE — HTTP adapter matches available task creation, detail and confirm responses, AI source, metadata topics and backend error format.
+- DONE — Create form and card editor use topic slugs from GET /api/meta; AI fallback source and 409 no-question path are handled.
+- DONE — Catalog accepts TaskSummary; task detail stays visible if proposal loading fails. Team catalog now loads «Мои предложения» separately.
+- DONE — Saved demo team is reconciled with GET /api/teams; optional prototype URL is validated only when entered and sent as null when blank.
+- DONE — Prepared HTTP mapping for push 2 publish, catalog and proposals; mock remains a separate default mode.
+- DONE — Light first-screen layout based on the GPTZero composition reference, using ASAR's logo and palette. Added restrained entrance/loading motion, compact form spacing, responsive order and reduced-motion support. No external assets or dependencies added.
+- DONE — Frontend npm.cmd run build and git diff --check pass after integration.
 
 ## Blocked
-- BLOCKED — Real HTTP integration: backend lacks confirm, publish, catalog and all proposal endpoints. Owner: backend developer.
-- BLOCKED — Task creation with free-text topic: backend requires a TopicSlug or null. Owner: frontend and backend developers to agree on the mapping or contract.
-- BLOCKED — Published TaskOut does not guarantee the non-null score, breakdown, missing fields and date needed by the task page. Owner: backend developer to confirm response shape.
+- BLOCKED — Push 2 endpoints are still absent from origin/main 138b54f: POST publish, GET catalog, POST/GET task proposals, GET team proposals, PATCH proposal status. Owner: backend developer.
+- BLOCKED — Real HTTP run: Docker daemon unavailable, localhost:8000 not serving, local Python lacks FastAPI and pytest. Owner: local environment/team.
+- BLOCKED — Browser/dev-server run was rejected by automatic approval review because an earlier task explicitly forbade it; visual viewport and two-minute demo are not verified. Awaiting explicit user authorization to lift that old restriction for the current task.
 
 ## Remaining P0
-- Backend developer registers six missing routes and supplies sample responses and commit SHA; ETA: backend owner.
-- Agree on topic semantics and published TaskOut shape; ETA: 10 minutes with backend owner.
-- After backend is ready, validate and adjust HTTP mappings, then run one full integration check; frontend ETA: 35–45 minutes.
-
-## Dropped
-- DROPPED — API client generation, cache layer and new product features.
-
-## Contract gaps
-- MISSING: PUT /api/tasks/{task_id}/confirm; POST /api/tasks/{task_id}/publish; GET /api/tasks; GET and POST /api/tasks/{task_id}/proposals; PATCH /api/proposals/{proposal_id}.
-- MISMATCH: free-text frontend topic vs backend TopicSlug at POST /api/tasks; PublishedTask required fields vs nullable backend TaskOut at GET /api/tasks/{task_id}.
-- Build-card payload now matches the current backend schema at the HTTP boundary.
+- Fetch push 2, bring only backend updates, verify actual routes and response schemas.
+- Run full HTTP flow: topic → AI → card → confirm → publish → catalog → proposal → manual decision, without paid AI calls unless the team supplies an approved test method.
+- Choose real API mode for submission, then complete two-minute demo rehearsal on a working environment.
 
 ## Next
-1. Backend owner implements missing routes and sends commit SHA with sample response bodies — ETA from backend owner.
-2. Frontend and backend owners agree on topic and published-task response shape — 10 minutes.
-3. Frontend owner runs HTTP integration against the ready backend and fixes confirmed differences — 35–45 minutes.
+1. Backend owner sends push 2 commit SHA and response examples.
+2. Frontend owner reconciles any schema differences and builds — 15–25 minutes after commit.
+3. Team starts backend environment and runs full HTTP/demo check — 20–30 minutes after environment is available.
+## Product entry page
+- DONE - Added clear business/student positioning beside the actual draft form.
+- DONE - Added how-it-works steps, an explanation of the readiness rating, and a catalog entry for student teams.
+- DONE - Added an optional example draft; intro sections disappear once the user starts the task workflow.
+- Verification: TypeScript and Vite build passed. Browser verification remains unavailable under the earlier explicit restriction.

@@ -55,6 +55,10 @@ export default function TaskPage({ role }: TaskPageProps) {
   const [proposals, setProposals] = useState<Proposal[]>([]);
   const [loading, setLoading] = useState(true);
   const [loadError, setLoadError] = useState('');
+  const [proposalsLoading, setProposalsLoading] = useState(true);
+  const [proposalsError, setProposalsError] = useState('');
+  const [teamNames, setTeamNames] = useState<Record<string, string>>({});
+  const [topicLabels, setTopicLabels] = useState<Record<string, string>>({});
   const [form, setForm] = useState<ProposalForm>(emptyProposal);
   const [formError, setFormError] = useState('');
   const [formSuccess, setFormSuccess] = useState('');
@@ -62,16 +66,16 @@ export default function TaskPage({ role }: TaskPageProps) {
   const [decisionError, setDecisionError] = useState('');
   const [updatingProposal, setUpdatingProposal] = useState<string | null>(null);
   const [reload, setReload] = useState(0);
+  const [proposalsReload, setProposalsReload] = useState(0);
 
   useEffect(() => {
     let active = true;
     setLoading(true);
     setLoadError('');
-    Promise.all([api.getTask(id), api.getProposals(id)])
-      .then(([nextTask, nextProposals]) => {
-        if (!active) return;
-        setTask(nextTask);
-        setProposals(nextProposals);
+    setTask(null);
+    api.getTask(id)
+      .then((nextTask) => {
+        if (active) setTask(nextTask);
       })
       .catch((caught) => {
         if (active) setLoadError(errorMessage(caught));
@@ -81,6 +85,39 @@ export default function TaskPage({ role }: TaskPageProps) {
       });
     return () => { active = false; };
   }, [id, reload]);
+
+  useEffect(() => {
+    let active = true;
+    setProposalsLoading(true);
+    setProposalsError('');
+    setProposals([]);
+    api.getProposals(id)
+      .then((nextProposals) => {
+        if (active) setProposals(nextProposals);
+      })
+      .catch((caught) => {
+        if (active) setProposalsError(errorMessage(caught));
+      })
+      .finally(() => {
+        if (active) setProposalsLoading(false);
+      });
+    return () => { active = false; };
+  }, [id, proposalsReload]);
+
+  useEffect(() => {
+    let active = true;
+    api.getTeams().then((teams) => {
+      if (active) setTeamNames(Object.fromEntries(teams.map((team) => [team.id, team.name])));
+    }).catch(() => {
+      // Proposal cards still show the team identifier if names are unavailable.
+    });
+    api.getMeta().then((meta) => {
+      if (active) setTopicLabels(Object.fromEntries(meta.topics.map((topic) => [topic.slug, topic.label])));
+    }).catch(() => {
+      // The topic slug remains visible when metadata is unavailable.
+    });
+    return () => { active = false; };
+  }, []);
 
   const missingByField = useMemo(
     () => new Map(task?.missing_fields.map((item) => [item.field, item]) ?? []),
@@ -105,11 +142,11 @@ export default function TaskPage({ role }: TaskPageProps) {
       estimated_duration: form.estimated_duration.trim(),
       prototype_url: form.prototype_url.trim(),
     };
-    if (Object.values(values).some((value) => !value)) {
-      setFormError('Заполните все поля предложения.');
+    if (![values.idea, values.plan, values.estimated_duration].every(Boolean)) {
+      setFormError('Заполните идею, план и срок предложения.');
       return;
     }
-    if (!isValidUrl(values.prototype_url)) {
+    if (values.prototype_url && !isValidUrl(values.prototype_url)) {
       setFormError('Укажите корректную ссылку с http:// или https://.');
       return;
     }
@@ -183,7 +220,7 @@ export default function TaskPage({ role }: TaskPageProps) {
     <header className="detail-heading">
       <div className="detail-title">
         <div className="task-row__meta">
-          <span className="topic-pill">{task.topic}</span>
+          <span className="topic-pill">{task.topic ? (topicLabels[task.topic] ?? task.topic) : 'Без темы'}</span>
           <span className={'readiness readiness--' + task.readiness_level}>{task.readiness_label}</span>
         </div>
         <h1>{task.title}</h1>
@@ -235,25 +272,32 @@ export default function TaskPage({ role }: TaskPageProps) {
               <label className="field"><span>Предполагаемый срок *</span>
                 <input value={form.estimated_duration} onChange={(event) => updateForm('estimated_duration', event.target.value)} disabled={submitting} placeholder="Например, 3 недели" />
               </label>
-              <label className="field"><span>Ссылка на прототип *</span>
+              <label className="field"><span>Ссылка на прототип (необязательно)</span>
                 <input type="url" value={form.prototype_url} onChange={(event) => updateForm('prototype_url', event.target.value)} disabled={submitting} placeholder="https://…" />
               </label>
             </div>
             {formError && <div className="error-banner" role="alert">{formError}</div>}
             {formSuccess && <div className="notice-banner" role="status">{formSuccess}</div>}
-            <button className="button button-primary" type="submit" disabled={submitting}>
+            <button className="button button-primary" type="submit" aria-busy={submitting} disabled={submitting}>
               {submitting ? 'Сохраняем…' : 'Отправить предложение'} <span aria-hidden="true">↗</span>
             </button>
           </form>
 
           <div className="own-proposals">
             <h3>Предложения вашей команды</h3>
-            {ownProposals.length === 0
-              ? <p className="inline-empty">Пока нет отправленных предложений.</p>
-              : ownProposals.map((proposal) => <div key={proposal.id}>
-                  <strong>{proposal.idea}</strong>
-                  <span className={'proposal-status proposal-status--' + proposal.status}>{statusLabel(proposal.status)}</span>
-                </div>)}
+            {proposalsLoading
+              ? <p className="inline-empty" role="status">Загружаем предложения…</p>
+              : proposalsError
+                ? <div className="error-banner" role="alert">
+                    Не удалось загрузить предложения: {proposalsError}
+                    <button className="button button-secondary" type="button" onClick={() => setProposalsReload((value) => value + 1)}>Повторить</button>
+                  </div>
+                : ownProposals.length === 0
+                  ? <p className="inline-empty">Пока нет отправленных предложений.</p>
+                  : ownProposals.map((proposal) => <div key={proposal.id}>
+                      <strong>{proposal.idea}</strong>
+                      <span className={'proposal-status proposal-status--' + proposal.status}>{statusLabel(proposal.status)}</span>
+                    </div>)}
           </div>
         </section>}
 
@@ -263,22 +307,31 @@ export default function TaskPage({ role }: TaskPageProps) {
             <div><h2>Предложения команд</h2><p>Решение принимает представитель бизнеса. Можно принять несколько предложений.</p></div>
           </div>
           {decisionError && <div className="error-banner" role="alert">{decisionError}</div>}
-          {proposals.length === 0
-            ? <div className="inline-empty">Команды ещё не отправили предложения по этой задаче.</div>
-            : <div className="proposal-list">{proposals.map((proposal) => <article className="proposal-item" key={proposal.id}>
+          {proposalsLoading
+            ? <div className="inline-empty" role="status">Загружаем предложения…</div>
+            : proposalsError
+              ? <div className="error-banner" role="alert">
+                  Не удалось загрузить предложения: {proposalsError}
+                  <button className="button button-secondary" type="button" onClick={() => setProposalsReload((value) => value + 1)}>Повторить</button>
+                </div>
+              : proposals.length === 0
+                ? <div className="inline-empty">Команды ещё не отправили предложения по этой задаче.</div>
+                : <div className="proposal-list">{proposals.map((proposal) => <article className="proposal-item" key={proposal.id}>
                 <div className="proposal-item__head">
-                  <strong>{proposal.team_name}</strong>
+                  <strong>{proposal.team_name || teamNames[proposal.team_id] || 'Команда ' + proposal.team_id.slice(0, 8)}</strong>
                   <span className={'proposal-status proposal-status--' + proposal.status}>{statusLabel(proposal.status)}</span>
                 </div>
                 <p>{proposal.idea}</p>
                 <dl>
                   <div><dt>План</dt><dd>{proposal.plan}</dd></div>
                   <div><dt>Срок</dt><dd>{proposal.estimated_duration}</dd></div>
-                  <div><dt>Прототип</dt><dd><a href={proposal.prototype_url} target="_blank" rel="noreferrer">{proposal.prototype_url}</a></dd></div>
+                  <div><dt>Прототип</dt><dd>{proposal.prototype_url && isValidUrl(proposal.prototype_url)
+                    ? <a href={proposal.prototype_url} target="_blank" rel="noreferrer">{proposal.prototype_url}</a>
+                    : 'Не указан'}</dd></div>
                   <div><dt>Отправлено</dt><dd>{formatDate(proposal.created_at)}</dd></div>
                 </dl>
                 {proposal.status === 'pending' && <div className="proposal-actions">
-                  <button className="button button-primary" type="button" disabled={updatingProposal === proposal.id} onClick={() => decide(proposal.id, 'accepted')}>
+                  <button className="button button-primary" type="button" aria-busy={updatingProposal === proposal.id} disabled={updatingProposal === proposal.id} onClick={() => decide(proposal.id, 'accepted')}>
                     {updatingProposal === proposal.id ? 'Сохраняем…' : 'Принять'}
                   </button>
                   <button className="button button-secondary" type="button" disabled={updatingProposal === proposal.id} onClick={() => decide(proposal.id, 'rejected')}>Отклонить</button>

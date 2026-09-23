@@ -1,14 +1,18 @@
 ﻿import {
   fieldDefinitions,
   type AnalyzeDraftResponse,
+  type BuildTaskCardResponse,
   type CardField,
+  type CatalogTask,
   type CreateProposalInput,
+  type MetaResponse,
   type Proposal,
   type ProposalStatus,
   type PublishResult,
   type PublishedTask,
   type ScoreResult,
   type TaskCard,
+  type TeamProposal,
 } from '../types';
 import type { TaskApi } from './client';
 import { createId, readMockStore, writeMockStore } from './mockStore';
@@ -125,13 +129,14 @@ export const mockApi: TaskApi = {
         { id: 'q2', target_field: 'data', text: 'Какие данные и материалы доступны команде?' },
         { id: 'q3', target_field: 'success_criteria', text: 'Как вы измерите успешность результата?' },
       ],
+      source: 'fallback',
     };
   },
 
-  async buildTaskCard({ draft, topic, questions, answers }): Promise<{ card: TaskCard }> {
+  async buildTaskCard({ draft, topic, questions, answers }): Promise<BuildTaskCardResponse> {
     await delay();
     if (!meaningful(draft) || !meaningful(topic)) throw new Error('Описание и тема обязательны.');
-    if (questions.length < 3 || answers.length !== questions.length ||
+    if ((questions.length !== 0 && questions.length < 3) || answers.length !== questions.length ||
         questions.some((question) => !answers.some((answer) =>
           answer.question_id === question.id &&
           answer.target_field === question.target_field &&
@@ -145,7 +150,12 @@ export const mockApi: TaskApi = {
     for (const { target_field, answer } of answers) {
       if (target_field in card) card[target_field] = answer.trim();
     }
-    return { card };
+    return { card, source: 'fallback' };
+  },
+
+  async previewRating({ card }): Promise<ScoreResult> {
+    await delay();
+    return calculateScore(card);
   },
 
   async confirmTaskCard({ card }): Promise<ScoreResult> {
@@ -191,7 +201,7 @@ export const mockApi: TaskApi = {
     return { task_id: taskId, status: 'published' };
   },
 
-  async getCatalog(params = {}) {
+  async getCatalog(params = {}): Promise<CatalogTask[]> {
     await delay();
     const { topic, readiness_level, sort = 'score_desc' } = params;
     const tasks = readMockStore().tasks.filter((task) =>
@@ -204,12 +214,41 @@ export const mockApi: TaskApi = {
         return new Date(right.published_at).getTime() - new Date(left.published_at).getTime();
       }
       return right.score - left.score;
-    });
+    }).map(({ id, title, topic: taskTopic, card, score, readiness_level, missing_fields, published_at }) => ({
+      id,
+      title,
+      topic: taskTopic,
+      context: card.context,
+      score,
+      readiness_level,
+      missing_fields,
+      published_at,
+    }));
   },
 
   async getTask(taskId) {
     await delay();
     return readMockStore().tasks.find(({ id }) => id === taskId) ?? null;
+  },
+
+  async getMeta(): Promise<MetaResponse> {
+    await delay();
+    return {
+      topics: [
+        { slug: 'automation', label: 'Автоматизация' },
+        { slug: 'analytics', label: 'Аналитика' },
+        { slug: 'marketing', label: 'Маркетинг' },
+        { slug: 'education', label: 'Образование' },
+        { slug: 'finance', label: 'Финансы' },
+        { slug: 'other', label: 'Другое' },
+      ],
+      readiness_levels: [
+        { slug: 'draft', label: 'Черновик', min: 0, max: 39 },
+        { slug: 'working', label: 'Рабочая', min: 40, max: 69 },
+        { slug: 'ready', label: 'Готовая', min: 70, max: 89 },
+        { slug: 'priority', label: 'Приоритетная', min: 90, max: 100 },
+      ],
+    };
   },
 
   async getTeams() {
@@ -224,16 +263,36 @@ export const mockApi: TaskApi = {
       .sort((left, right) => new Date(right.created_at).getTime() - new Date(left.created_at).getTime());
   },
 
+  async getTeamProposals(teamId: string): Promise<TeamProposal[]> {
+    await delay();
+    const store = readMockStore();
+    const tasksById = new Map(store.tasks.map((task) => [task.id, task]));
+    return store.proposals
+      .filter((proposal) => proposal.team_id === teamId)
+      .sort((left, right) => new Date(right.created_at).getTime() - new Date(left.created_at).getTime())
+      .map((proposal) => {
+        const task = tasksById.get(proposal.task_id);
+        return {
+          ...proposal,
+          task: {
+            id: proposal.task_id,
+            title: task?.title ?? null,
+            topic: task?.topic ?? null,
+          },
+        };
+      });
+  },
+
   async createProposal(taskId: string, input: CreateProposalInput): Promise<Proposal> {
     await delay();
     const store = readMockStore();
     if (!store.tasks.some(({ id }) => id === taskId)) throw new Error('Задача не найдена.');
     const team = store.teams.find(({ id }) => id === input.team_id);
     if (!team) throw new Error('Команда не найдена.');
-    if (![input.idea, input.plan, input.estimated_duration, input.prototype_url].every((value) => value.trim())) {
-      throw new Error('Заполните все поля предложения.');
+    if (![input.idea, input.plan, input.estimated_duration].every((value) => value.trim())) {
+      throw new Error('Заполните идею, план и срок предложения.');
     }
-    if (!validHttpUrl(input.prototype_url.trim())) {
+    if (input.prototype_url.trim() && !validHttpUrl(input.prototype_url.trim())) {
       throw new Error('Укажите корректную ссылку с http:// или https://.');
     }
     const proposal: Proposal = {
@@ -244,7 +303,7 @@ export const mockApi: TaskApi = {
       idea: input.idea.trim(),
       plan: input.plan.trim(),
       estimated_duration: input.estimated_duration.trim(),
-      prototype_url: input.prototype_url.trim(),
+      prototype_url: input.prototype_url.trim() || null,
       status: 'pending',
       created_at: new Date().toISOString(),
     };

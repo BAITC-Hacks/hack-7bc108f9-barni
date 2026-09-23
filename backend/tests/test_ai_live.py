@@ -8,7 +8,7 @@ from dotenv import load_dotenv
 from fastapi.testclient import TestClient
 
 from app.main import app
-from app.schemas.ai import AnalyzeDraftResponse, BuildCardResponse
+from app.schemas.ai import AnalyzeDraftOut, BuildCardOut
 
 pytestmark = pytest.mark.skipif(
     os.getenv("RUN_LIVE_AI") != "1", reason="Set RUN_LIVE_AI=1 for paid OpenAI checks"
@@ -27,13 +27,13 @@ def client():
 def test_live_analyze_then_build(client):
     draft = "Хотим улучшить обработку заявок клиентов"
     response = client.post(
-        "/api/ai/analyze-draft", json={"draft": draft, "topic": "Автоматизация"}
+        "/api/ai/analyze-draft", json={"draft": draft, "topic": "automation"}
     )
     assert response.status_code == 200
     assert response.headers["X-AI-Fallback"] == "false", (
         "Real AI failed; fallback is not a passing live test"
     )
-    analysis = AnalyzeDraftResponse.model_validate(response.json())
+    analysis = AnalyzeDraftOut.model_validate(response.json())
     assert analysis.known_fields.get("need")
     for field in ("data", "contact", "constraints", "success_criteria", "users"):
         assert field not in analysis.known_fields
@@ -43,7 +43,7 @@ def test_live_analyze_then_build(client):
         "/api/ai/build-card",
         json={
             "draft": draft,
-            "topic": "Автоматизация",
+            "topic": "automation",
             "questions": [q.model_dump() for q in analysis.questions],
             "answers": [
                 {
@@ -54,10 +54,10 @@ def test_live_analyze_then_build(client):
         },
     )
     assert response.status_code == 200
-    card = BuildCardResponse.model_validate(response.json()).card
+    card = BuildCardOut.model_validate(response.json()).card
     assert card.context and "WhatsApp" in card.context
     assert card.need
-    assert card.topic == "Автоматизация"
+    assert card.topic == "automation"
     for field in ("data", "contact", "constraints", "success_criteria", "users"):
         assert getattr(card, field) is None
 
@@ -92,9 +92,25 @@ def test_live_build_grounding(client, draft, expected, unknown):
         "/api/ai/build-card", json={"draft": draft, "questions": [], "answers": []}
     )
     assert response.status_code == 200
-    card = BuildCardResponse.model_validate(response.json()).card
+    card = BuildCardOut.model_validate(response.json()).card
     for field, fragment in expected.items():
         value = getattr(card, field)
         assert value and fragment in value
     for field in unknown:
         assert getattr(card, field) is None
+
+
+def test_live_analysis_does_not_ask_for_supplied_facts(client):
+    response = client.post(
+        "/api/ai/analyze-draft",
+        json={
+            "draft": "Хотим ускорить обработку заявок. Сейчас операторы вручную переносят заявки из почты в таблицу. Данные для команды: CSV с заявками. Ожидаемый результат: прототип формы заявок.",
+            "topic": "automation",
+        },
+    )
+    assert response.status_code == 200
+    assert response.headers["X-AI-Fallback"] == "false"
+    result = AnalyzeDraftOut.model_validate(response.json())
+    for field in ("context", "data", "expected_result", "need", "topic"):
+        assert field in result.known_fields
+        assert all(q.target_field != field for q in result.questions)

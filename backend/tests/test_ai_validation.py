@@ -51,7 +51,7 @@ def analysis():
 def request():
     return BuildCardRequest(
         draft=DRAFT,
-        topic="Автоматизация",
+        topic="automation",
         questions=[analysis().questions[0]],
         answers=[{"question_id": "q1", "answer": CONTEXT}],
     )
@@ -101,11 +101,11 @@ def test_invalid_analysis_rejected(mutation):
 
 
 def test_fallback_is_deterministic_and_does_not_invent_facts():
-    req = AnalyzeDraftRequest(draft=DRAFT, topic="Автоматизация")
+    req = AnalyzeDraftRequest(draft=DRAFT, topic="automation")
     first = fallback_analysis(req)
     assert first == fallback_analysis(req)
     assert len(first.questions) >= 3
-    assert first.known_fields == {"topic": "Автоматизация"}
+    assert first.known_fields == {"topic": "automation"}
     assert all(q.target_field in first.missing_fields for q in first.questions)
 
 
@@ -232,7 +232,7 @@ def test_http_without_key(monkeypatch):
         )
         response = client.post("/api/ai/build-card", json=request().model_dump())
         assert response.status_code == 503
-        assert response.json()["detail"]["retryable"] is True
+        assert response.json()["error"]["retryable"] is True
         assert "api_key" not in response.text.lower()
 
 

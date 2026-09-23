@@ -17,6 +17,17 @@ export type TaskCard = Record<CardField, string | null>;
 export type Readiness = 'draft' | 'working' | 'ready' | 'priority';
 export type ReadinessLevel = Readiness;
 export type CatalogSort = 'score_desc' | 'score_asc' | 'newest';
+export type AiSource = 'model' | 'fallback';
+
+export interface TopicOption {
+  slug: string;
+  label: string;
+}
+
+export interface MetaResponse {
+  topics: TopicOption[];
+  readiness_levels: Array<{ slug: ReadinessLevel; label: string; min: number; max: number }>;
+}
 
 export interface ClarifyingQuestion {
   id: string;
@@ -28,6 +39,12 @@ export interface AnalyzeDraftResponse {
   known_fields: Partial<TaskCard>;
   missing_fields: CardField[];
   questions: ClarifyingQuestion[];
+  source: AiSource;
+}
+
+export interface BuildTaskCardResponse {
+  card: TaskCard;
+  source: AiSource;
 }
 
 export interface QuestionAnswer {
@@ -89,6 +106,18 @@ export interface PublishedTask {
   missing_fields: MissingField[];
   status: 'published';
   published_at: string;
+  proposals_count?: number;
+}
+
+export interface CatalogTask {
+  id: string;
+  title: string | null;
+  topic: string | null;
+  context: string | null;
+  score: number;
+  readiness_level: ReadinessLevel;
+  missing_fields: MissingField[];
+  published_at: string;
 }
 
 export interface Team {
@@ -105,13 +134,21 @@ export interface Proposal {
   id: string;
   task_id: string;
   team_id: string;
-  team_name: string;
+  team_name?: string;
   idea: string;
   plan: string;
   estimated_duration: string;
-  prototype_url: string;
+  prototype_url: string | null;
   status: ProposalStatus;
   created_at: string;
+}
+
+export interface TeamProposal extends Proposal {
+  task: {
+    id: string;
+    title: string | null;
+    topic: string | null;
+  };
 }
 
 export interface CurrentDemoRole {
