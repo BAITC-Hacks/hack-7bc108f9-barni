@@ -1,0 +1,1 @@
+{"root":["./src/app.tsx","./src/main.tsx","./src/types.ts","./src/api/index.ts","./src/api/mock.ts","./src/components/scorepanel.tsx","./src/components/taskcardeditor.tsx","./src/pages/catalogpage.tsx","./src/pages/createpage.tsx","./src/pages/taskpage.tsx","./vite.config.ts"],"version":"5.9.3"}
