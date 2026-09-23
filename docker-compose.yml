@@ -39,6 +39,10 @@ services:
         # Empty: the browser calls /api on the frontend host, nginx proxies it to backend.
         VITE_API_URL: ""
     restart: unless-stopped
+    environment:
+      # Only used to print the address to open once everything is up.
+      FRONTEND_PORT: ${FRONTEND_PORT:-5173}
+      PUBLIC_URL: ${PUBLIC_URL:-}
     ports:
       - "${FRONTEND_PORT:-5173}:80"
     depends_on:
