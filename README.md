@@ -297,7 +297,7 @@ cp .env.example .env
 ```env
 OPENAI_API_KEY=
 DATABASE_URL=postgresql+psycopg://postgres:postgres@postgres:5432/hackalem
-VITE_API_URL=http://localhost:8000
+VITE_API_URL=http://localhost:5137/create
 ```
 
 `OPENAI_MODEL` задаётся через `.env` / `.env.example` проекта.
