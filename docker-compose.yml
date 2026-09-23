@@ -1,6 +1,7 @@
 services:
   postgres:
     image: postgres:16
+    restart: unless-stopped
     environment:
       POSTGRES_USER: ${POSTGRES_USER:-postgres}
       POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-postgres}
@@ -15,6 +16,8 @@ services:
 
   backend:
     build: ./backend
+    # Restarts if it starts before Postgres accepts connections (depends_on is not applied on restart).
+    restart: unless-stopped
     env_file:
       - path: .env
         required: false
