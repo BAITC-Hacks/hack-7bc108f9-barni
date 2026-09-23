@@ -17,7 +17,9 @@ Frontend: React, TypeScript, Vite, React Router, fetch, Tailwind.
 ## Команды (завершаются сами)
 - docker compose up -d --build
 - docker compose exec backend pytest -q
-- scripts/smoke_test.sh
+- scripts/smoke_test.sh — полная цепочка tz.md §20, за собой всё удаляет
+- scripts/restart_check.sh — данные переживают docker compose restart
+- scripts/reset_demo.sh — очистить задачи и предложения, заново загрузить data/seed.json
 - docker compose down
 Нельзя использовать как проверку docker compose up без -d и npm run dev — они не завершаются.
 
