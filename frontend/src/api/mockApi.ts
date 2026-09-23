@@ -7,7 +7,6 @@
   type ProposalStatus,
   type PublishResult,
   type PublishedTask,
-  type QuestionAnswer,
   type ScoreResult,
   type TaskCard,
 } from '../types';
@@ -129,17 +128,21 @@ export const mockApi: TaskApi = {
     };
   },
 
-  async buildTaskCard({ draft, topic, answers }): Promise<{ card: TaskCard }> {
+  async buildTaskCard({ draft, topic, questions, answers }): Promise<{ card: TaskCard }> {
     await delay();
     if (!meaningful(draft) || !meaningful(topic)) throw new Error('Описание и тема обязательны.');
-    if (answers.length < 3 || answers.some(({ answer }) => !answer.trim())) {
+    if (questions.length < 3 || answers.length !== questions.length ||
+        questions.some((question) => !answers.some((answer) =>
+          answer.question_id === question.id &&
+          answer.target_field === question.target_field &&
+          Boolean(answer.answer.trim())))) {
       throw new Error('Ответьте на все уточняющие вопросы.');
     }
     const card = emptyCard();
     card.title = draft.trim().slice(0, 100);
     card.topic = topic.trim();
     card.need = draft.trim();
-    for (const { target_field, answer } of answers as QuestionAnswer[]) {
+    for (const { target_field, answer } of answers) {
       if (target_field in card) card[target_field] = answer.trim();
     }
     return { card };

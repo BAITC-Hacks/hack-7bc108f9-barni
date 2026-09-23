@@ -70,7 +70,7 @@ export default function CreatePage() {
     }));
     setBusy('building'); setError('');
     try {
-      const result = await api.buildTaskCard({ draft: draft.trim(), topic: topic.trim(), answers: questionAnswers });
+      const result = await api.buildTaskCard({ draft: draft.trim(), topic: topic.trim(), questions: analysis.questions, answers: questionAnswers });
       if (!result.card || typeof result.card !== 'object') throw new Error('Не удалось получить карточку.');
       const fields: CardField[] = [
         'title', 'topic', 'context', 'need', 'users', 'data', 'constraints',

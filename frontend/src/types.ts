@@ -36,6 +36,13 @@ export interface QuestionAnswer {
   answer: string;
 }
 
+export interface BuildTaskCardInput {
+  draft: string;
+  topic: string;
+  questions: ClarifyingQuestion[];
+  answers: QuestionAnswer[];
+}
+
 export interface ScoreBreakdownItem {
   field: CardField;
   label: string;

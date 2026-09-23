@@ -60,7 +60,10 @@ export default function App() {
   return <div className="app-shell">
     <header className="site-header">
       <div className="header-main">
-        <Link className="brand" to="/create" aria-label="ASAR — главная">ASAR</Link>
+        <Link className="brand" to="/create" aria-label="ASAR — главная">
+          <img className="brand-logo" src="/asar-logo.png" alt="" width="44" height="44" />
+          <span>ASAR</span>
+        </Link>
         <nav className="main-nav" aria-label="Основная навигация">
           <NavLink to="/create" className={({ isActive }) => isActive ? 'nav-link active' : 'nav-link'}>Создать задачу</NavLink>
           <NavLink to="/catalog" className={({ isActive }) => isActive ? 'nav-link active' : 'nav-link'}>Каталог</NavLink>
